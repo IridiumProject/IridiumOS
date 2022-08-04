@@ -1,0 +1,11 @@
+
+#!/bin/bash
+
+for i in $(find . -name "*.d"); do
+  rm $i
+done
+
+for i in $(find . -name "*.o"); do
+  rm $i
+done
+

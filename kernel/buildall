@@ -1,0 +1,40 @@
+#!/bin/bash
+
+for i in $(find ./ -type f -name "*.c")
+do
+    x86_64-elf-gcc $i -Iinclude/ \
+	    -std=gnu11           \
+	    -ffreestanding       \
+	    -fno-stack-protector \
+	    -fno-pic             \
+        -Werror=implicit     \
+        -Werror=implicit-function-declaration  \
+        -Werror=implicit-int \
+        -Werror=int-conversion \
+        -Werror=incompatible-pointer-types \
+        -Werror=int-to-pointer-cast        \
+	    -mabi=sysv           \
+	    -mno-80387           \
+	    -mno-mmx             \
+	    -mno-3dnow           \
+	    -mno-sse             \
+	    -mno-sse2            \
+	    -mno-red-zone        \
+	    -mcmodel=kernel      \
+	    -MMD                 \
+        -Iinclude            \
+        -c                   \
+        -o $i.o
+done
+
+for i in $(find ./ -type f -name "*.asm")
+do
+    nasm $i -felf64 -o $i.o
+done 
+
+
+x86_64-elf-ld  $(find ./ -type f -name "*.o") -Tlinker.ld            \
+	-nostdlib              \
+	-zmax-page-size=0x1000 \
+	-static                \
+    -o kernel.sys          \
