@@ -32,8 +32,6 @@ Iridium.iso: kernel
 	rm -rf iso_root
 	mkdir -p iso_root
 	mkdir -p iso_root/Iridium
-	mkdir -p iso_root/assets/
-	cp base/assets/* iso_root/assets/
 	cp base/limine.cfg \
 		limine/limine.sys limine/limine-cd.bin limine/limine-cd-efi.bin iso_root/
 	cp kernel/$(KERN_FILE) base/internals/* iso_root/Iridium/
