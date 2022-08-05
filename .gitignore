@@ -6,3 +6,4 @@ kernel/limine.h
 *.hdd
 *.o
 *.d
+*.sys
