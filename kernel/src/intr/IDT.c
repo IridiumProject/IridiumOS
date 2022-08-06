@@ -14,9 +14,11 @@ void idt_set_desc(uint8_t vector, void* isr, uint8_t flags) {
     desc->cs = 0x28;
     desc->dpl = 3;
     desc->p = 1;
+    desc->ist = 0;
     desc->zero = 0;
     desc->zero1 = 0;
     desc->zero2 = 0;
+    desc->attr = flags;
     desc->reserved = 0;
 }
 
