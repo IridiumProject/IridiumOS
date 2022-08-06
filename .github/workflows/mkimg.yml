@@ -21,7 +21,7 @@ jobs:
           sudo apt-get -y install xorriso
           sudo make setup
           sudo make CC="gcc -march=x86-64"
-      - name: Uploading ISO as artefact.
+      - name: Uploading ISO as artifact
         uses: actions/upload-artifact@v2
         with:
           name: Iridium
