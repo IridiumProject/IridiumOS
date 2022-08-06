@@ -13,14 +13,14 @@ jobs:
 
       - name: Build
         run: |
-          apt-get -y update
-          apt-get -y install gcc
-          apt-get -y install make
-          apt-get -y install git
-          apt-get -y install nasm
-          apt-get -y install xorriso
-          make setup
-          make CC="gcc -march=x86-64"
+          sudo apt-get -y update
+          sudo apt-get -y install gcc
+          sudo apt-get -y install make
+          sudo apt-get -y install git
+          sudo apt-get -y install nasm
+          sudo apt-get -y install xorriso
+          sudo make setup
+          sudo make CC="gcc -march=x86-64"
       - name: Uploading ISO as artefact.
         uses: actions/upload-artifact@v2
         with:
