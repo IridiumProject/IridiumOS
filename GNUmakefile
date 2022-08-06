@@ -1,6 +1,7 @@
 ARCH ?= x86_64
 KERN_FILE = kernel.sys
 CFILES = $(shell find kernel/src/ -name "*.c")
+CC = x86_64-elf-gcc
 
 # Check that the architecture is supported and set relevant variables.
 ifeq ($(ARCH),x86_64)
@@ -46,7 +47,7 @@ Iridium.iso: kernel
 
 .PHONY: linkobj
 linkobj: buildcfiles
-	x86_64-elf-ld *.o -Tkernel/linker.ld          \
+	ld *.o -Tkernel/linker.ld          \
 	-nostdlib              \
 	-zmax-page-size=0x1000 \
 	-static                \
@@ -56,7 +57,7 @@ linkobj: buildcfiles
 
 .PHONY: buildcfiles
 buildcfiles: $(CFILES)
-	x86_64-elf-gcc $^ -Iinclude/ \
+	$(CC) $^ -Iinclude/ \
 	    -std=gnu11           \
 	    -ffreestanding       \
 	    -fno-stack-protector \
