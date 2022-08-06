@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <limine.h>
 #include <common/log.h>
+#include <intr/intr.h>
 
 static void done(void) {
     for (;;) {
@@ -10,6 +11,7 @@ static void done(void) {
 }
 
 void _start(void) {
-    kprintf(KINFO "Hello!");
+    intr_init();
+    kprintf(KINFO "Interrupts init: OK\n");
     done();
 }
