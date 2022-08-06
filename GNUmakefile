@@ -1,6 +1,7 @@
 ARCH ?= x86_64
 KERN_FILE = kernel.sys
 CFILES = $(shell find kernel/src/ -name "*.c")
+ASMFILES = $(shell find kernel/src/ -name "*.asm")
 CC = x86_64-elf-gcc
 
 # Check that the architecture is supported and set relevant variables.
@@ -46,7 +47,7 @@ Iridium.iso: kernel
 	bash kernel/clean
 
 .PHONY: linkobj
-linkobj: buildcfiles
+linkobj: buildcfiles buildasmfiles
 	ld *.o -Tkernel/linker.ld          \
 	-nostdlib              \
 	-zmax-page-size=0x1000 \
@@ -80,6 +81,10 @@ buildcfiles: $(CFILES)
         -Ikernel/include            \
         -c                  
 
+.PHONY: buildasmfiles
+buildasmfiles:
+	for i in $$(find kernel/src/ -name "*.asm"); do nasm -felf64 $$i; done
+	for i in $$(find kernel/src/ -name "*.o"); do mv $$i ./; done
 
 .PHONY: clean
 clean:
