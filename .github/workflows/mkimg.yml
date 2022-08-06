@@ -1,0 +1,28 @@
+name: mkimg
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+   job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build
+        run: |
+          apt-get -y update
+          apt-get -y install gcc
+          apt-get -y install make
+          apt-get -y install git
+          apt-get -y install nasm
+          apt-get -y install xorriso
+          make setup
+          make CC="gcc -march=x86-64"
+      - name: Uploading ISO as artefact.
+        uses: actions/upload-artifact@v2
+        with:
+          name: Iridium
+          path: Iridium.iso
