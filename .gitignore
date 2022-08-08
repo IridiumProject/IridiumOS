@@ -7,3 +7,4 @@ kernel/limine.h
 *.o
 *.d
 *.sys
+logfile.txt
