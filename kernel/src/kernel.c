@@ -5,6 +5,7 @@
 #include <intr/intr.h>
 #include <mm/pmm.h>
 #include <mm/vmm.h>
+#include <firmware/acpi/acpi.h>
 
 #define STATUS_MSG_COLOR CYAN
 #define STATUS_MSG_OK_COLOR KINFO
@@ -23,6 +24,7 @@ void _start(void) {
     kprintf(STATUS_MSG_COLOR "[PMM]:" STATUS_MSG_OK_COLOR " OK\n");
     vmm_init();
     kprintf(STATUS_MSG_COLOR "[VMM]:" STATUS_MSG_OK_COLOR " OK\n");
+	acpi_init();
 	kprintf(STATUS_MSG_COLOR "[ACPI]:" STATUS_MSG_OK_COLOR " OK\n");
     done();
 }
