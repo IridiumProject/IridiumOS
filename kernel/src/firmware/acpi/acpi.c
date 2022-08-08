@@ -53,8 +53,10 @@ static void parse_madt(void) {
 				++n_cores;
 				break;
 			case APIC_TYPE_IO_APIC:
-				io_apic_t* ioapic = (io_apic_t*)cur;
-				ioapic_base = (void*)(uint64_t)ioapic->io_apic_addr;
+				{
+					io_apic_t* ioapic = (io_apic_t*)cur;
+					ioapic_base = (void*)(uint64_t)ioapic->io_apic_addr;
+				}
 				break;
 		}
 
