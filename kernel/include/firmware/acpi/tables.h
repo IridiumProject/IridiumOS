@@ -165,8 +165,8 @@ typedef struct {
 typedef struct {
     apic_header_t header;
     uint8_t bus;
-    uint8_t source;
-    uint32_t interrupt;
+    uint8_t source;					// IRQ.
+    uint32_t interrupt;				// GSI.
     uint16_t flags;
 } __attribute__((packed)) apic_interrupt_override_t;
 
