@@ -65,6 +65,26 @@ static void parse_madt(void) {
 }
 
 
+uint16_t acpi_irq_to_gsi(uint8_t irq) {
+ 	uint8_t* cur = (uint8_t*)(madt + 1);
+    uint8_t* end = (uint8_t*)madt + madt->header.length;
+
+	while (cur < end) {
+		apic_header_t* apic_header = (apic_header_t*)cur;
+
+		if (apic_header->type == APIC_TYPE_INTERRUPT_OVERRIDE) {
+			apic_interrupt_override_t* intr_override = (apic_interrupt_override_t*)cur;
+			if (intr_override->source == irq) {
+				return intr_override->interrupt;
+			}
+		}
+
+		cur += apic_header->length;
+	}
+
+	return irq;
+}
+
 void* acpi_get_lapic_base(void) {
 	return lapic_base;
 }
