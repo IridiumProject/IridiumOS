@@ -10,6 +10,9 @@
 #define WHITE "\e[0;37m"
 #define BOLD_YELLOW "\e[1;33m"
 
+#define STATUS_MSG_COLOR CYAN
+#define STATUS_MSG_OK_COLOR KINFO
+
 void kprintf(char* fmt, ...);
 void clear_term(void);
 
