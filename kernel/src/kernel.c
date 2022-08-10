@@ -6,10 +6,8 @@
 #include <mm/pmm.h>
 #include <mm/vmm.h>
 #include <firmware/acpi/acpi.h>
-
-#define STATUS_MSG_COLOR CYAN
-#define STATUS_MSG_OK_COLOR KINFO
-
+#include <arch/x86/ioapic.h>
+#include <arch/x86/lapic.h>
 
 static void done(void) {
     for (;;) {
@@ -26,5 +24,9 @@ void _start(void) {
     kprintf(STATUS_MSG_COLOR "[VMM]:" STATUS_MSG_OK_COLOR " OK\n");
 	acpi_init();
 	kprintf(STATUS_MSG_COLOR "[ACPI]:" STATUS_MSG_OK_COLOR " OK\n");
+	ioapic_init();
+	kprintf(STATUS_MSG_COLOR "[I/O APIC]:" STATUS_MSG_OK_COLOR " OK\n");
+	lapic_init();
+	kprintf(STATUS_MSG_COLOR "[Local APIC]:" STATUS_MSG_OK_COLOR " OK\n");
     done();
 }
