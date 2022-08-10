@@ -3,6 +3,7 @@
 
 
 void intr_init(void);
+void init_irqs(void);
 
 
 #endif

@@ -1,6 +1,9 @@
 #include <intr/intr.h>
 #include <intr/IDT.h>
 #include <intr/exceptions.h>
+#include <intr/irq.h>
+#include <firmware/acpi/acpi.h>
+#include <arch/x86/ioapic.h>
 #include <stdint.h>
 
 #define TRAP_GATE_FLAGS 0x8F
@@ -30,6 +33,13 @@ static void init_exceptions(void) {
     for (uint16_t i = 0; i <= 0xE; ++i) {
         idt_set_desc(i, exceptions[i], TRAP_GATE_FLAGS);
     }
+}
+
+
+void init_irqs(void) {
+	// Timer.
+	idt_set_desc(0x20, irq0_isr, INT_GATE_FLAGS);
+	ioapic_set_entry(acpi_irq_to_gsi(0), 0x20);
 }
 
 
