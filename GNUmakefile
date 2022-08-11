@@ -16,7 +16,7 @@ all: Iridium.iso
 
 .PHONY: run
 run: Iridium.iso
-	qemu-system-$(ARCH) -M q35 -m 2G -drive file=Iridium.iso -boot d -monitor stdio --enable-kvm -serial telnet:localhost:4321,server,nowait
+	qemu-system-$(ARCH) -M q35 -m 2G -drive file=Iridium.iso -boot d -monitor stdio --enable-kvm -serial telnet:localhost:4321,server,nowait -smp 2
 
 .PHONY: debug1
 debug1:
