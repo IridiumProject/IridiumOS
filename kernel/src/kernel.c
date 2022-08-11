@@ -36,7 +36,7 @@ static void init(void) {
 	init_irqs();
 	kprintf(STATUS_MSG_COLOR "[IRQS]:" STATUS_MSG_OK_COLOR " OK\n");
 	STI;
-    done();
+	done();
 }
 
 void _start(void) {
