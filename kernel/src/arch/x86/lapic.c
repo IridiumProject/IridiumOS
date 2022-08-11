@@ -78,6 +78,13 @@ void lapic_send_eoi(void) {
 	write(LAPIC_EOI, 0);
 }
 
+
+__attribute__((noreturn)) void cpu_reset(void) {
+	write(LAPIC_ICRHI, 1 << 24);			// Logical ID 1 (just to make sure).
+	write(LAPIC_ICRLO, ICR_INIT | ICR_LOGICAL | ICR_ASSERT | ICR_LEVEL | ICR_ALL_INCLUDING_SELF);
+	while (1);
+}
+
 void lapic_init(void) {
 	lapic_base = acpi_get_lapic_base();
 	// Use flat model and ensure all CPUs use
