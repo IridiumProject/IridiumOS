@@ -25,18 +25,18 @@ static void init(void) {
     kprintf(STATUS_MSG_COLOR "[PMM]:" STATUS_MSG_OK_COLOR " OK\n");
     vmm_init();
     kprintf(STATUS_MSG_COLOR "[VMM]:" STATUS_MSG_OK_COLOR " OK\n");
-	acpi_init();
-	kprintf(STATUS_MSG_COLOR "[ACPI]:" STATUS_MSG_OK_COLOR " OK\n");
-	ioapic_init();
-	kprintf(STATUS_MSG_COLOR "[I/O APIC]:" STATUS_MSG_OK_COLOR " OK\n");
-	lapic_init();
-	kprintf(STATUS_MSG_COLOR "[Local APIC]:" STATUS_MSG_OK_COLOR " OK\n");
-	pit_init();
-	kprintf(STATUS_MSG_COLOR "[PIT]:" STATUS_MSG_OK_COLOR " OK\n");
-	init_irqs();
-	kprintf(STATUS_MSG_COLOR "[IRQS]:" STATUS_MSG_OK_COLOR " OK\n");
-	STI;
-	done();
+    acpi_init();
+    kprintf(STATUS_MSG_COLOR "[ACPI]:" STATUS_MSG_OK_COLOR " OK\n");
+    ioapic_init();
+    kprintf(STATUS_MSG_COLOR "[I/O APIC]:" STATUS_MSG_OK_COLOR " OK\n");
+    lapic_init();
+    kprintf(STATUS_MSG_COLOR "[Local APIC]:" STATUS_MSG_OK_COLOR " OK\n");
+    pit_init();
+    kprintf(STATUS_MSG_COLOR "[PIT]:" STATUS_MSG_OK_COLOR " OK\n");
+    init_irqs();
+    kprintf(STATUS_MSG_COLOR "[IRQS]:" STATUS_MSG_OK_COLOR " OK\n");
+    STI;
+    done();
 }
 
 void _start(void) {
