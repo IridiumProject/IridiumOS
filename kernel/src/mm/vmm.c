@@ -2,6 +2,7 @@
 #include <mm/pmm.h>
 #include <arch/mem.h>
 #include <common/string.h>
+#include <common/debug.h>
 
 PML4* cur_pml4;
 
@@ -58,6 +59,23 @@ void vmm_map_page(PML4* pml4, uint64_t logical, uint32_t flags) {
     } else {
         page_tbl[PT_IDX] |= flags;
     }
+}
+
+
+void vmm_unmap_page(PML4* pml4, uint64_t logical) {
+    logical = ALIGN_DOWN(logical, 0x1000);
+    ASSERT(logical % 0x1000 == 0);
+    const uint64_t PML4_IDX = (logical >> 39) & 0x1FF;
+    const uint64_t PDPT_IDX = (logical >> 30) & 0x1FF;
+    const uint64_t PD_IDX = (logical >> 21) & 0x1FF;
+    const uint64_t PT_IDX = (logical >> 12) & 0x1FF;
+
+
+    uint64_t* pdpt = (uint64_t*)(pml4[PML4_IDX] & PAGE_ADDR_MASK);
+    uint64_t* pdt = (uint64_t*)(pdpt[PDPT_IDX] & PAGE_ADDR_MASK);
+    uint64_t* page_tbl = (uint64_t*)(pdt[PD_IDX] & PAGE_ADDR_MASK);
+    page_tbl[PT_IDX] = logical;
+    invlpg((void*)logical);
 }
 
 void* vmm_alloc_page(void)

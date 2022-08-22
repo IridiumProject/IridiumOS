@@ -13,6 +13,7 @@ typedef enum {
 } PAGE_BITS;
 
 void vmm_map_page(PML4* pml4, uint64_t logical, uint32_t flags);
+void vmm_unmap_page(PML4* pml4, uint64_t logical);
 void vmm_init(void);
 void* vmm_alloc_page(void);
 PML4* mkpml4(void);
