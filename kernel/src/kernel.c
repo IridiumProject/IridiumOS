@@ -6,6 +6,7 @@
 #include <intr/intr.h>
 #include <mm/pmm.h>
 #include <mm/vmm.h>
+#include <mm/kheap.h>
 #include <firmware/acpi/acpi.h>
 #include <arch/x86/ioapic.h>
 #include <arch/x86/lapic.h>
@@ -35,6 +36,10 @@ static void init(void) {
     kprintf(STATUS_MSG_COLOR "[PIT]:" STATUS_MSG_OK_COLOR " OK\n");
     init_irqs();
     kprintf(STATUS_MSG_COLOR "[IRQS]:" STATUS_MSG_OK_COLOR " OK\n");
+
+    kheap_init();
+    kprintf(STATUS_MSG_COLOR "[KHEAP]:" STATUS_MSG_OK_COLOR " OK\n");
+
     STI;
     done();
 }
