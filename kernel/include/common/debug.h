@@ -14,7 +14,7 @@
 
 
 #define ASSERT(condition) \
-  if (!(condition)) { kprintf(KERN_PANIC "![BUG]! ASSERTION %s FAILED! (%s:%d)\nREPORT THIS BUG AND INCLUDE A SCREENSHOT.\n", #condition, __FILE__, __LINE__); CLI; HLT; }
+  if (!(condition)) { kprintf(KERN_PANIC "![BUG]! ASSERTION \"%s\" FAILED! (%s:%d)\nREPORT THIS BUG AND INCLUDE A SCREENSHOT.\n", #condition, __FILE__, __LINE__); CLI; HLT; }
 
 
 #endif
