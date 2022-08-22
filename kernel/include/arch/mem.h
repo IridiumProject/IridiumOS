@@ -13,4 +13,7 @@
 #define HIGHER_HALF_DATA_TO_PHYS(address)   (address - HIGHER_HALF_DATA)
 #define HIGHER_HALF_CODE_TO_PHYS(address)   (address - HIGHER_HALF_CODE)
 
+#define ALIGN_DOWN(address, align)  ((address) & ~((align)-1))
+#define ALIGN_UP(address, align)    (((address) + (align)-1) & ~((align)-1))
+
 #endif
