@@ -11,6 +11,8 @@
 #include <arch/x86/ioapic.h>
 #include <arch/x86/lapic.h>
 #include <timer/pit.h>
+#include <proc/proc.h>
+#include <fs/initrd.h>
 
 static void done(void) {
     for (;;) {
@@ -36,14 +38,18 @@ static void init(void) {
     kprintf(STATUS_MSG_COLOR "[PIT]:" STATUS_MSG_OK_COLOR " OK\n");
     init_irqs();
     kprintf(STATUS_MSG_COLOR "[IRQS]:" STATUS_MSG_OK_COLOR " OK\n");
-
     kheap_init();
     kprintf(STATUS_MSG_COLOR "[KHEAP]:" STATUS_MSG_OK_COLOR " OK\n");
+    proc_init();
+    kprintf(STATUS_MSG_COLOR "[PROC]:" STATUS_MSG_OK_COLOR " OK\n");
+    initrd_init();
+    kprintf(STATUS_MSG_COLOR "[INITRD]:" STATUS_MSG_OK_COLOR " OK\n");
 
     STI;
     done();
 }
 
 void _start(void) {
+    CLI;
 	init();
 }
