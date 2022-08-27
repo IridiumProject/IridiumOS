@@ -26,7 +26,7 @@ setup:
 	git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-branch-binary --depth=1
 
 .PHONY: kernel
-kernel: linkobj
+kernel: linkobj initrd
 
 Iridium.iso: kernel
 	make -C limine
@@ -55,6 +55,12 @@ linkobj: buildcfiles buildasmfiles
     -o kernel.sys         
 	rm *.o *.d
 	mv kernel.sys kernel/
+
+.PHONY: initrd
+initrd:
+	mv base/initrd/ ./
+	tar -cvf base/internals/initrd.sys initrd/
+	mv initrd/ base/
 
 .PHONY: buildcfiles
 buildcfiles: $(CFILES)

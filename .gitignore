@@ -6,4 +6,5 @@ kernel/limine.h
 *.o
 *.d
 *.sys
+base/internals/initrd.tar
 logfile.txt
