@@ -3,6 +3,7 @@
 #include <limine.h>
 #include <common/log.h>
 #include <common/asm.h>
+#include <common/init.h>
 #include <intr/intr.h>
 #include <mm/pmm.h>
 #include <mm/vmm.h>
@@ -45,7 +46,8 @@ static void init(void) {
     initrd_init();
     kprintf(STATUS_MSG_COLOR "[INITRD]:" STATUS_MSG_OK_COLOR " OK\n");
 
-    STI;
+    start_init_system();
+
     done();
 }
 
