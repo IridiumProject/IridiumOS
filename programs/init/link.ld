@@ -1,17 +1,7 @@
 ENTRY(main)
 
 SECTIONS {
-    . = 0x500;
-
-    .text : {
+    .text 0x1000 : {
         *(.text)
-    }
-
-    .data : {
-        *(.data)
-    }
-
-    .bss : {
-        *(.bss)
     }
 }
