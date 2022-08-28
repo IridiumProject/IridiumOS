@@ -11,8 +11,10 @@
 #include <firmware/acpi/acpi.h>
 #include <arch/x86/ioapic.h>
 #include <arch/x86/lapic.h>
+#include <arch/x86/gdt.h>
 #include <timer/pit.h>
 #include <proc/proc.h>
+#include <proc/tss.h>
 #include <fs/initrd.h>
 
 static void done(void) {
@@ -41,6 +43,11 @@ static void init(void) {
     kprintf(STATUS_MSG_COLOR "[IRQS]:" STATUS_MSG_OK_COLOR " OK\n");
     kheap_init();
     kprintf(STATUS_MSG_COLOR "[KHEAP]:" STATUS_MSG_OK_COLOR " OK\n");
+    load_gdt();
+    kprintf(STATUS_MSG_COLOR "[GDT]:" STATUS_MSG_OK_COLOR " OK\n");
+    write_tss();
+    load_tss();
+    kprintf(STATUS_MSG_COLOR "[TSS]:" STATUS_MSG_OK_COLOR " OK\n");
     proc_init();
     kprintf(STATUS_MSG_COLOR "[PROC]:" STATUS_MSG_OK_COLOR " OK\n");
     initrd_init();
