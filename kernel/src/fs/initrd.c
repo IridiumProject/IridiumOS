@@ -27,23 +27,6 @@ struct TarHeader {
 
 static struct limine_file* initrd = NULL;
 
-
-void initrd_init(void) {
-    for (uint64_t i = 0; i < mod_req.response->module_count; ++i) {
-        struct limine_file* cur = mod_req.response->modules[i];
-
-        if (strcmp(cur->path, "/Iridium/initrd.sys") == 0) {
-            initrd = cur;
-            break;
-        }
-    }
-
-    if (initrd == NULL) {
-        kprintf(KERN_PANIC "Unable to load initial ramdisk!\n");
-        CLI; HLT;
-    }
-}
-
 static size_t getsize(const char* in) {
     size_t size = 0;
     size_t j;
@@ -69,6 +52,23 @@ static void* get_buf(const char* data, size_t n_bytes) {
 
     buf[n_bytes] = 0;
     return (void*)buf;
+}
+
+
+void initrd_init(void) {
+    for (uint64_t i = 0; i < mod_req.response->module_count; ++i) {
+        struct limine_file* cur = mod_req.response->modules[i];
+
+        if (strcmp(cur->path, "/Iridium/initrd.sys") == 0) {
+            initrd = cur;
+            break;
+        }
+    }
+
+    if (initrd == NULL) {
+        kprintf(KERN_PANIC "Unable to load initial ramdisk!\n");
+        CLI; HLT;
+    }
 }
 
 
