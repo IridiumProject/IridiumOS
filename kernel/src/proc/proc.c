@@ -60,7 +60,7 @@ __attribute__((naked)) void proc_init(void) {
     __asm__ __volatile__("mov %0, %%cr3" :: "r" (cur_pml4));
 
     // Allocate a new stack.
-    queue_base->context[PCTX_RSP] = (uint64_t)kmalloc(STACK_SIZE) + (STACK_SIZE - 1);
+    queue_base->context[PCTX_RSP] = (uint64_t)kmalloc(STACK_SIZE) + (STACK_SIZE - 10);
     queue_base->context[PCTX_RBP] = queue_base->context[PCTX_RBP];
     ASSERT(queue_base->context[PCTX_RSP] != 0);
 
