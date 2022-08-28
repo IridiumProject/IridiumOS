@@ -1,11 +1,12 @@
 #include <common/init.h>
 #include <common/elf.h>
+#include <proc/ring3.h>
 #include <proc/proc.h>
 #include <mm/vmm.h>
 #include <stdint.h>
 #include <stddef.h>
 
-#define INIT_START_VADDR 0x500
+#define INIT_START_VADDR 0x1000
 
 
 extern struct Process* current_task;
@@ -31,5 +32,5 @@ void start_init_system(void) {
     }
 
     void(*init)(void) = (void*)INIT_START_VADDR;
-    init();
+    switch_to_ring3(init);
 }
