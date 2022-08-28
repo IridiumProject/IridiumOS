@@ -18,6 +18,10 @@ all: Iridium.iso
 run: Iridium.iso
 	qemu-system-$(ARCH) -M q35 -m 2G -drive file=Iridium.iso -boot d -monitor stdio --enable-kvm -serial telnet:localhost:4321,server,nowait -smp 2
 
+.PHONY: debug
+debug: Iridium.iso
+	qemu-system-$(ARCH) -M q35 -m 2G -drive file=Iridium.iso -boot d -monitor stdio -serial telnet:localhost:4321,server,nowait -smp 2 -d int -D logfile.txt
+
 .PHONY: debug1
 debug1:
 	qemu-system-$(ARCH) -M q35 -m 2G -drive file=Iridium.iso -boot d -monitor stdio -d int -D logfile.txt -s -S
@@ -29,11 +33,14 @@ setup:
 kernel: linkobj initrd
 
 Iridium.iso: kernel
+	cd programs/; make
 	make -C limine
 	mkdir -p base/internals/
+	mkdir -p base/initrd
 	rm -rf iso_root
 	mkdir -p iso_root
 	mkdir -p iso_root/Iridium
+	mv programs/bin/* base/initrd/
 	cp base/limine.cfg \
 		limine/limine.sys limine/limine-cd.bin limine/limine-cd-efi.bin iso_root/
 	cp kernel/$(KERN_FILE) base/internals/* iso_root/Iridium/
