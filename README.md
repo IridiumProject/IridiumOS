@@ -13,3 +13,6 @@ Install the following:
 Now do:
 
 ``make setup; make; make run``
+
+## Creator
+Ian Marco Moffett <spurious.vector@gmail.com>
