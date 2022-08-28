@@ -2,6 +2,7 @@
 #include <mm/vmm.h>
 #include <arch/mem.h>
 #include <common/debug.h>
+#include <common/asm.h>
 #include <stdint.h>
 
 #define KHEAP_MAG 0xCA75C001
@@ -75,6 +76,7 @@ void* kmalloc(size_t n_bytes) {
 
     for (int i = 0; i < n_bytes; i += DEFAULT_PAGE_SIZE) {
         vmm_map_page(cur_pml4, (uint64_t)tmp, PAGE_PRESENT | PAGE_WRITABLE);
+
         tmp += 0x1000;
     }
 
@@ -101,6 +103,19 @@ void* kmalloc(size_t n_bytes) {
 
 KHEAP_STATUS_T kheap_status(void) {
     return status;
+}
+
+
+void* kmalloc_user(size_t n_bytes) {
+    CLI;
+    void* block = kmalloc(n_bytes);
+
+    for (uint64_t i = (uint64_t)block; i < (uint64_t)(block + n_bytes); ++i) {
+        vmm_map_page(cur_pml4, i, PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
+    }
+
+    STI;
+    return block;
 }
 
 

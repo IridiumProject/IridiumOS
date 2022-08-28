@@ -16,7 +16,6 @@ extern PML4* cur_pml4;
 
 static uint64_t ret_rip;
 
-
 __attribute__((naked)) void proc_init(void) {
     // Ensure this function isn't called twice.
     ASSERT(queue_head == NULL);
@@ -60,8 +59,8 @@ __attribute__((naked)) void proc_init(void) {
     __asm__ __volatile__("mov %0, %%cr3" :: "r" (cur_pml4));
 
     // Allocate a new stack.
-    queue_base->context[PCTX_RSP] = (uint64_t)kmalloc(STACK_SIZE) + (STACK_SIZE - 10);
-    queue_base->context[PCTX_RBP] = queue_base->context[PCTX_RBP];
+    queue_base->context[PCTX_RSP] = (uint64_t)kmalloc_user(STACK_SIZE) + (STACK_SIZE - 10);
+    queue_base->context[PCTX_RBP] = queue_base->context[PCTX_RSP];
     ASSERT(queue_base->context[PCTX_RSP] != 0);
 
     __asm__ __volatile__(
@@ -71,7 +70,7 @@ __attribute__((naked)) void proc_init(void) {
             mov %1, (%%rsp); \
             sti; \
             retq" :: "r" (queue_base->context[PCTX_RSP]), 
-                                  "r" (ret_rip));
+                     "r" (ret_rip));
 }
 
 
