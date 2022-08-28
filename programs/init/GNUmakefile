@@ -28,5 +28,5 @@ build: $(CFILES)
 		-c
 
 link:
-	x86_64-elf-ld -Tlink.ld *.o -o ../bin/$(OUTPUT)
+	ld -Tlink.ld *.o -o ../bin/$(OUTPUT)
 	rm *.o
