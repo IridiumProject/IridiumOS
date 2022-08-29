@@ -2,6 +2,7 @@
 #include <intr/IDT.h>
 #include <intr/exceptions.h>
 #include <intr/irq.h>
+#include <intr/syscall.h>
 #include <firmware/acpi/acpi.h>
 #include <arch/x86/ioapic.h>
 #include <stdint.h>
@@ -44,6 +45,7 @@ void init_irqs(void) {
 
 
 void intr_init(void) {
+    idt_set_desc(0x80, dispatch_syscall, IDT_INT_GATE_USER);
     init_exceptions();
     idt_install();
 }
