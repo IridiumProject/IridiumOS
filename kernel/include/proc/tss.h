@@ -29,9 +29,9 @@ struct TSSEntry {
     uint64_t reserved3;
     uint16_t reserved4;
     uint16_t io_base;
-};
+} __attribute__((packed));
 
-struct __attribute__((packed)) TSSDescriptor {
+struct TSSDescriptor {
     uint16_t seglimit;
     uint16_t baseAddrLow;
     uint8_t baseAddrMiddle;
@@ -46,7 +46,7 @@ struct __attribute__((packed)) TSSDescriptor {
     uint8_t baseAddrOtherMiddle;
     uint32_t baseAddrUpper;
     uint32_t reserved;
-};
+} __attribute__((packed));
 
 
 void write_tss(void);
