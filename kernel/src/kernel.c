@@ -42,16 +42,18 @@ static void init(void) {
     init_irqs();
     kprintf(STATUS_MSG_COLOR "[IRQS]:" STATUS_MSG_OK_COLOR " OK\n");
     kheap_init();
-    kprintf(STATUS_MSG_COLOR "[KHEAP]:" STATUS_MSG_OK_COLOR " OK\n");
+    kprintf(STATUS_MSG_COLOR "[KHEAP]:" STATUS_MSG_OK_COLOR " OK\n"); 
+    proc_init();
+    kprintf(STATUS_MSG_COLOR "[PROC]:" STATUS_MSG_OK_COLOR " OK\n");
+    initrd_init();
+    kprintf(STATUS_MSG_COLOR "[INITRD]:" STATUS_MSG_OK_COLOR " OK\n");
+    CLI;
     load_gdt();
     kprintf(STATUS_MSG_COLOR "[GDT]:" STATUS_MSG_OK_COLOR " OK\n");
     write_tss();
     load_tss();
     kprintf(STATUS_MSG_COLOR "[TSS]:" STATUS_MSG_OK_COLOR " OK\n");
-    proc_init();
-    kprintf(STATUS_MSG_COLOR "[PROC]:" STATUS_MSG_OK_COLOR " OK\n");
-    initrd_init();
-    kprintf(STATUS_MSG_COLOR "[INITRD]:" STATUS_MSG_OK_COLOR " OK\n");
+    // STI;
 
     start_init_system();
 
