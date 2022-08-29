@@ -6,16 +6,13 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define INIT_START_VADDR 0x1000
+#define INIT_START_VADDR 0x2000
 
 
 extern struct Process* current_task;
 
 
 void start_init_system(void) {
-    // Map a page at 0x500 for the init service.
-    vmm_map_page((PML4*)current_task->context[PCTX_CR3], INIT_START_VADDR, PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
-
     // Move data from kmalloc'd memory to our newly mapped memory.
     uint64_t current_vaddr = INIT_START_VADDR;
     size_t code_size;
