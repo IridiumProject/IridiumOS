@@ -20,7 +20,7 @@ struct SyscallRegs {
 
 
 static void sys_hello(void) {
-    kprintf("SYS_HELLO: Hello mr sir compooter user.\n");
+    kprintf(KINFO "SYS_HELLO: Hello mr sir compooter user.\n");
 }
 
 
