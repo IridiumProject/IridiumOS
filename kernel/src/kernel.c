@@ -16,12 +16,13 @@
 #include <proc/proc.h>
 #include <proc/tss.h>
 #include <fs/initrd.h>
+#include <bus/pci/pci.h>
 
 static void done(void) {
     for (;;) {
         __asm__("hlt");
     }
-}
+} 
 
 
 static void init(void) {
@@ -55,6 +56,8 @@ static void init(void) {
     kprintf(STATUS_MSG_COLOR "[TSS]:" STATUS_MSG_OK_COLOR " OK\n");
     // STI;
 
+    kprintf(STATUS_MSG_COLOR "[SYSTEM]:" YELLOW " Starting PCI dump (will be truncated).\n\n");
+    pci_dump();
     start_init_system();
 
     done();
