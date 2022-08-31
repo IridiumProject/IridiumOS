@@ -1,0 +1,14 @@
+SERVICE NUMBER: 0
+
+POSSIBLE REQUESTS:
+
+- 0: FETCH KEYSTROKE (SECTION 1.0 FOR DETAILS ABOUT KEYSTROKE PACKET)
+
+
+
+-- SECTION 1.0 --
+
+KEYSTROKE PACKET:
+    Bits 15-0: Scancode
+    Bits 23-16: Character
+    Bit 24: Pressed (1: true, 0: false).
