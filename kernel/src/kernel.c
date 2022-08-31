@@ -17,12 +17,13 @@
 #include <proc/tss.h>
 #include <fs/initrd.h>
 #include <bus/pci/pci.h>
+#include <input/keyboard.h>
 
 static void done(void) {
     for (;;) {
         __asm__("hlt");
     }
-} 
+}
 
 
 static void init(void) {
@@ -54,10 +55,11 @@ static void init(void) {
     write_tss();
     load_tss();
     kprintf(STATUS_MSG_COLOR "[TSS]:" STATUS_MSG_OK_COLOR " OK\n");
-    // STI;
 
     kprintf(STATUS_MSG_COLOR "[SYSTEM]:" YELLOW " Starting PCI dump (will be truncated).\n\n");
     pci_dump();
+
+    keyboard_uapi_init();
     start_init_system();
 
     done();
