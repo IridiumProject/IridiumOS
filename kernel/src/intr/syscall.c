@@ -1,9 +1,10 @@
 #include <intr/syscall.h>
 #include <common/log.h>
+#include <uapi/sysreq.h>
 #include <stdint.h>
 
 // Change SYSCALL_COUNT not g_SYSCALL_COUNT.
-#define SYSCALL_COUNT 1
+#define SYSCALL_COUNT 2
 const uint16_t g_SYSCALL_COUNT = SYSCALL_COUNT;
 
 struct SyscallRegs {
@@ -20,10 +21,25 @@ struct SyscallRegs {
 
 
 static void sys_hello(void) {
-    kprintf(KINFO "SYS_HELLO: Hello mr sir compooter user.\n");
+    kprintf(KINFO "SYS_HELLO: Hello! I see you pressed a key!\n");
+}
+
+/*
+ *  RBX: Service number.
+ *  RCX: Request number.
+ *  Returned in RAX: Status code.
+ *  Returned in RBX: Possible output.
+ *
+ */
+
+static void sys_req(void) {
+    UAPI_OUT_T output;
+    syscall_regs.rax = sysreq(syscall_regs.rbx, syscall_regs.rcx, &output);
+    syscall_regs.rbx = output;
 }
 
 
 void(*syscall_table[SYSCALL_COUNT])(void) = {
-    sys_hello
+    sys_hello,
+    sys_req
 };
