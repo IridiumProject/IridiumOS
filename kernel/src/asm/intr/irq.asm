@@ -7,7 +7,7 @@ extern switch_task
 
 irq0_isr:
 	cli
-	inc dword [pit_ticks]
+	inc word [pit_ticks]
 	call lapic_send_eoi
     jmp switch_task
     ;; --- NO RETURN ---
