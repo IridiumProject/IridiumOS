@@ -1,7 +1,8 @@
 ENTRY(main)
 
 SECTIONS {
-    .text 0x1000 : {
+    . = 0x2000;
+    .text 0x2000 : {
         *(.text)
     }
 }
