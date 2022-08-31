@@ -75,6 +75,8 @@ dispatch_syscall:
     get_reg_at 8
     mov r10, rax
 
+    get_reg_at 0
+
     .done:
         sti
         iretq
