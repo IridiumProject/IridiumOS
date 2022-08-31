@@ -13,7 +13,7 @@
 
 static uint32_t last_keystroke = 0;
 
-void __attribute__((interrupt)) irq1_isr(void*) {
+void __attribute__((interrupt)) irq1_isr(void* stack_frame) {
     const char* const SC_ASCII = "\x00\x1B" "1234567890-=" "\x08"
         "\x00" "qwertyuiop[]" "\x0D\x1D" "asdfghjkl;'`" "\x00" "\\"
         "zxcvbnm,./" "\x00\x00\x00" " ";
