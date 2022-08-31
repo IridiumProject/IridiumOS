@@ -79,8 +79,19 @@ switch_task:
     mov [rsp], rax
 
     index_context r10, 5
-   
-    sti
+
+    times 5 pop rax
+    push 0x40 | 3
+    push rbp
+    pushf
+
+    ;; Enable interrupts.
+    mov rax, [rsp]
+    or rax, 1 << 9
+    mov [rsp], rax
+
+    push 0x38 | 3
+    push qword [tmpbuf1]
     iretq
 
 section .data

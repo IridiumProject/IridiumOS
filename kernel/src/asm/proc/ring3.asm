@@ -1,9 +1,9 @@
 bits 64
 
 global switch_to_ring3
+extern pit_lock
 
 switch_to_ring3:
-    cli
     ;; This method of switching to ring 3 involves making
     ;; the CPU think it is already in ring 3 and just switching back.
     ;; This works by setting up an IRET stack frame manually with 
@@ -27,6 +27,7 @@ switch_to_ring3:
     push 0x40 | 3
     push rax
     pushf
+    or word [rsp], 0x0200
     push 0x38 | 3
     push rdi
     iretq
