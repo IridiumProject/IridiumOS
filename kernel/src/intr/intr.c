@@ -4,6 +4,7 @@
 #include <intr/irq.h>
 #include <intr/syscall.h>
 #include <firmware/acpi/acpi.h>
+#include <drivers/ps2/keyboard.h>
 #include <arch/x86/ioapic.h>
 #include <stdint.h>
 
@@ -38,9 +39,13 @@ static void init_exceptions(void) {
 
 
 void init_irqs(void) {
-	// Timer.
-	idt_set_desc(0x20, irq0_isr, INT_GATE_FLAGS);
-	ioapic_set_entry(acpi_irq_to_gsi(0), 0x20);
+    // Timer.
+    idt_set_desc(0x20, irq0_isr, INT_GATE_FLAGS);
+    ioapic_set_entry(acpi_irq_to_gsi(0), 0x20);
+
+    // PS/2 keyboard.
+    idt_set_desc(0x21, irq1_isr, INT_GATE_FLAGS);
+    ioapic_set_entry(acpi_irq_to_gsi(1), 0x21);
 }
 
 
