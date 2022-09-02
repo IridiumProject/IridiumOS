@@ -27,7 +27,9 @@ switch_to_ring3:
     push 0x40 | 3
     push rax
     pushf
-    or word [rsp], 0x0200
+    mov rax, [rsp]
+    or rax, 1 << 9
+    mov [rsp], rax
     push 0x38 | 3
     push rdi
     iretq
