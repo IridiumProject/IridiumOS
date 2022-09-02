@@ -22,6 +22,7 @@ extern g_SYSCALL_COUNT
 
 dispatch_syscall:
     cli
+
     movzx r11, word [g_SYSCALL_COUNT]
     cmp rax, r11
     jge .done
@@ -38,23 +39,20 @@ dispatch_syscall:
     set_reg_at 6, r8
     set_reg_at 7, r9
     set_reg_at 8, r10
-
+    
     mov r11, syscall_table
     imul rax, 8
     add r11, rax
-    call [r11]
+    call [r11]    
 
     get_reg_at 1
     mov rbx, rax
 
-
     get_reg_at 2
     mov rcx, rax
 
-
     get_reg_at 3
     mov rdx, rax
-
 
     get_reg_at 4
     mov rsi, rax
@@ -63,14 +61,11 @@ dispatch_syscall:
     get_reg_at 5
     mov rdi, rax
 
-
     get_reg_at 6
     mov r8, rax
 
-
     get_reg_at 7
     mov r9, rax
-
 
     get_reg_at 8
     mov r10, rax
@@ -78,5 +73,4 @@ dispatch_syscall:
     get_reg_at 0
 
     .done:
-        sti
         iretq
