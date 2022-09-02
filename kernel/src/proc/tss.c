@@ -19,9 +19,10 @@ void write_tss(void) {
     memzero(tss, sizeof(struct TSSEntry));
 
     uint64_t base = (uint64_t)tss;
+    uint64_t stack = (uint64_t)(kmalloc(KSTACK_SIZE) + KSTACK_SIZE - 20);
 
-    tss->rsp0Low = base & 0xFFFFFFFF; 
-    tss->rsp0High = base >> 32;
+    tss->rsp0Low = stack & 0xFFFFFFFF; 
+    tss->rsp0High = stack >> 32;
 
     gdt_tss->seglimit = sizeof(struct TSSEntry);
     gdt_tss->g = 0;                                             // Limit is in bytes.
