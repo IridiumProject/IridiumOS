@@ -32,7 +32,7 @@ switch_task:
     mov rax, [rsp]
     mov [tmpbuf1], rax
 
-    mov rdi, current_task
+    mov rdi, [current_task]
     call proc_get_context
 
     ;; Save current state.
@@ -49,11 +49,11 @@ switch_task:
     set_context_index rax, 7, r10
 
     ;; Get next task.
-    mov rdi, current_task
+    mov rdi, [current_task]
     call proc_get_next
     mov [current_task], rax
 
-    mov rdi, current_task
+    mov rdi, [current_task]
     call proc_get_context
     mov r10, rax
 
