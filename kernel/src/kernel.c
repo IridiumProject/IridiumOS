@@ -17,12 +17,19 @@
 #include <proc/tss.h>
 #include <fs/initrd.h>
 #include <bus/pci/pci.h>
-#include <input/keyboard.h>
+#include <uapi/input/keyboard.h>
+#include <uapi/video/screen.h>
 
 static void done(void) {
     for (;;) {
         __asm__("hlt");
     }
+}
+
+
+static void uapi_init(void) {
+    keyboard_uapi_init();
+    screen_uapi_init();
 }
 
 
@@ -58,8 +65,8 @@ static void init(void) {
 
     kprintf(STATUS_MSG_COLOR "[SYSTEM]:" YELLOW " Starting PCI dump (will be truncated).\n\n");
     pci_dump();
-
-    keyboard_uapi_init();
+    
+    uapi_init();
     start_init_system();
 
     done();
