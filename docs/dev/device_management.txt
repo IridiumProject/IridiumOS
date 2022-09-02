@@ -1,0 +1,38 @@
+Iridium has special processes called sys-daemons, a sys-daemon is a process that keeps 
+something in Iridium up and running.
+
+A daemon claims ownership to a group of drivers. In order for a process to claim a driver it will
+need the PPERM_DRVCLAIM permission, this permission allows a process to claim a limited amount of driver categories.
+A driver category is just a class of drivers.
+
+But keep in mind, not all drivers need to be claimable, some just need 
+administrator permissions and a sysreq(docs/sysreq/purpose.txt) to
+have userspace interaction.
+
+Also, all drivers are interacted with by sysreq but some sysreq services & requests cannot be used by a 
+normal program, instead it can be used by a daemon that has claimed the driver.
+
+Lets give an example so it makes more sense.
+
+Let's say we have a display driver that drives the pixels on the screen and let's say it has it's own interface:
+
+- draw_pixel(x, y, color)           // Draws pixel on the screen.
+- clear_screen(color)               // Clears screen.
+
+
+(if a normal program does a sysreq to do something with this, they'll get a permission denied error).
+
+To reduce the amount of accidents and increase security as well, we will have a display daemon that
+uses the drivers interface internally via sysreq and exposes it's own interface:
+
+- open_window(x, y, bg)
+- window_draw(window_handle, x, y, color)
+
+
+Much safer!
+
+It makes things much easier to find as well since you'll only have to find one process which is the daemon
+the claimed the driver.
+
+Since it claimed the driver it is ONLY daemon that has full control over the driver.
+Unless there is some sort of shared ownership which is NOT happening because that would be horrid.

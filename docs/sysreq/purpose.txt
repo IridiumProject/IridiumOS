@@ -1,0 +1,3 @@
+Sysreq's purpose is for device interaction.
+NOTE: You can only sysreq devices that are has it's 
+driver non-claimable (i.e not in the claimable list [see kernel/include/proc/drvmaster.h])

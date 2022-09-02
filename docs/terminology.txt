@@ -1,0 +1,15 @@
+Terminology:
+
+- Driver category/driver type.
+    A group of drivers with a similar purpose.
+
+- sys-daemon
+    A system process that keeps something working.
+
+- Claimable driver
+    A driver that either needs a little much of internal knowlage or one
+    that is not as safe to use directly from userspace, thus it is 'claimable' (by daemons with PPERM_DRVCLAIM)
+    and can be interacted with by a drvmaster's interface.
+
+- Drvmaster
+    A daemon that has claimed a driver.
