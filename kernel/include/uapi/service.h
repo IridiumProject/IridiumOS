@@ -26,7 +26,7 @@
  */
 
 
-#define SERVICE_COUNT 1
+#define SERVICE_COUNT 2
 #define UAPI_APPEND_SERVICE(service_num, uapi_routine_ptr)      \
     static uint8_t __uapi_append_lock = 0;                      \
     if (!(__uapi_append_lock)) {                                \
