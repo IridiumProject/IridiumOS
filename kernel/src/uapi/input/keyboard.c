@@ -1,5 +1,5 @@
-#include <input/keyboard.h>
 #include <drivers/ps2/keyboard.h>
+#include <uapi/input/keyboard.h>
 #include <uapi/service.h>
 
 static UAPI_STATUS_T keyboard_uapi(UAPI_REQ_T req, UAPI_OUT_T* output) {
