@@ -4,13 +4,15 @@
 #include <stdint.h>
 
 typedef uint16_t UAPI_SERVICE_T;
-typedef uint16_t UAPI_REQ_T;
+typedef uint64_t UAPI_REQ_T;
 typedef uint64_t UAPI_OUT_T;
 typedef enum {
     UAPI_OK = 0,
     UAPI_INVALID_ARG = 1,
     UAPI_INVALID_SERVICE = 2,
-    UAPI_UNKNOWN_ERROR = 3
+    UAPI_PERMISSION_DENIED = 3,
+    UAPI_CMDBURST_NOT_STARTED = 4,
+    UAPI_UNKNOWN_ERROR = 5,
 } UAPI_STATUS_T;
 
 /*
