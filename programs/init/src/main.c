@@ -1,5 +1,6 @@
 #include <stdint.h>
 
+
 int main(void) {
     while (1) {
         __asm__ __volatile__(
@@ -15,5 +16,7 @@ int main(void) {
                 int $0x80;      \
                 .done:");
     }
+    
+    while (1);
     return 0;
 }
