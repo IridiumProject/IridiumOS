@@ -3,9 +3,9 @@
 #include <common/asm.h>
 #include <mm/kheap.h>
 #include <mm/vmm.h>
+#include <stddef.h>
 
 #define STACK_SIZE 0x1000*3
-
 
 struct Process* queue_head = NULL;               // Top of queue.
 struct Process* queue_base = NULL;               // Base of queue.
@@ -43,10 +43,13 @@ __attribute__((naked)) void proc_init(void) {
     queue_base->context[PCTX_RCX] = 0;
     queue_base->context[PCTX_RAX] = 0;
     queue_base->context[PCTX_RIP] = ret_rip;
+    queue_base->n_slave_driver_groups = 0;
+    queue_base->perm_mask = PPERM_PERM | PPERM_DRVCLAIM;
 
     // Allocate a new address space.
     queue_base->context[PCTX_CR3] = (uint64_t)mkpml4();
     ASSERT(queue_base->context[PCTX_CR3] != 0);
+    ASSERT(queue_base->perm_mask & PPERM_DRVCLAIM);
 
     /*
      *  Update vmm.c's "cur_pml4" variable.
@@ -82,4 +85,54 @@ struct Process* proc_get_next(struct Process* root) {
 
 uint64_t* proc_get_context(struct Process* root) {
     return &root->context[0];
+}
+
+
+// Permission related stuff.
+ERRNO_T perm_grant(PID_T pid, PPERM_T perms) { \
+    // Check for PPERM_PERM.
+    if (!(current_task->perm_mask & PPERM_PERM)) {
+        return -EPERM;
+    }
+
+    struct Process* current = queue_base;
+    while (1) {
+        current = current->next;
+
+        if (current->pid == pid) {
+            // Found process with matching PID.
+            // Set permissions.
+            current->perm_mask |= perms;
+            return EXIT_SUCCESS;
+        }
+
+        if (current == queue_base) {
+            // We are back at the beginning, could not find process.
+            return EXIT_FAILURE;
+        } 
+    }
+}
+
+ERRNO_T perm_revoke(PID_T pid, PPERM_T perms) {
+    // Check for PPERM_PERM.
+    if (!(current_task->perm_mask & PPERM_PERM)) {
+        return -EPERM;
+    }
+
+    struct Process* current = queue_base;
+    while (1) {
+        current = current->next;
+
+        if (current->pid == pid) {
+            // Found process with matching PID.
+            // Unset permissions.
+            current->perm_mask &= ~(perms);
+            return EXIT_SUCCESS;
+        }
+
+        if (current == queue_base) {
+            // We are back at the beginning, could not find process.
+            return EXIT_FAILURE;
+        } 
+    }
 }

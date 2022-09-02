@@ -2,11 +2,27 @@
 #define PROC_H
 
 #include <stdint.h>
+#include <proc/drvmaster.h>
+#include <common/errno.h>
 
 #define PCONTEXT_SIZE 8
 
+/*
+ *  A task with this permission
+ *  can grant/revoke other takes
+ *  permissions (BE CAREFUL WITH THIS!!)
+ */
+#define PPERM_PERM      (1 << 0)
+
+/*
+ *  Allows a process to claim a limited amount of drivers.
+ *
+ */
+#define PPERM_DRVCLAIM  (1 << 1)
+
 
 typedef uint16_t PID_T;
+typedef uint32_t PPERM_T;
 
 typedef enum {
     PSTATE_BLOCKED,
@@ -27,11 +43,14 @@ typedef enum {
 } PCONTEXT_INDEX;
 
 struct Process {
-    PID_T pid;                          // Process identifier.
-    PSTATE_T state;                     // Process state.
-    uint64_t context[PCONTEXT_SIZE];    // Context (registers and address space).
-    struct Process* prev;               // Pointer to process on the prev.
-    struct Process* next;               // Pointer to process on the next.
+    PID_T pid;                                                  // Process identifier.
+    PSTATE_T state;                                             // Process state.
+    PPERM_T perm_mask;                                          // Premission bitmask.
+    uint64_t context[PCONTEXT_SIZE];                            // Context (registers and address space).
+    uint16_t n_slave_driver_groups;                             // The amount of driver groups this process owns.
+    DRIVER_TYPE_T slave_driver_groups[DRVMASTER_MAX_SLAVES];    // Driver group this process owns (used by daemons, if not used: DRIVERTYPE_NONE).
+    struct Process* prev;                                       // Pointer to process on the prev.
+    struct Process* next;                                       // Pointer to process on the next.
 };
 
 __attribute__((naked)) void proc_init(void);
@@ -39,5 +58,10 @@ __attribute__((naked)) void proc_init(void);
 // Assembly helpers for proc.asm
 uint64_t* proc_get_context(struct Process* root);
 struct Process* proc_get_next(struct Process* root);
+
+// Permission related stuff.
+ERRNO_T perm_grant(PID_T pid, PPERM_T perms);
+ERRNO_T perm_revoke(PID_T pid, PPERM_T perms);
+
 
 #endif
