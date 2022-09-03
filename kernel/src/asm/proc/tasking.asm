@@ -4,6 +4,7 @@ global switch_task
 extern current_task
 extern proc_get_next
 extern proc_get_context
+extern proc_set_state
 
 ;; Usage:
 ;; index_context contextptr index 
@@ -47,16 +48,29 @@ switch_task:
     set_context_index rax, 6, r10
     mov r10, cr3
     set_context_index rax, 7, r10
+    
+    ;; Set state as READY.
+    mov rdi, [current_task]
+    mov rsi, 2                          ;; 2 = PROC_READY.
+    call proc_set_state
 
     ;; Get next task.
     mov rdi, [current_task]
     call proc_get_next
-    mov [current_task], rax
+    mov [current_task], rax 
+    
+    ;; Set state as RUNNING.
+    mov rdi, [current_task]
+    mov rsi, 1                          ;; 1 = PROC_RUNNING.
+    call proc_set_state
 
+    ;; Get context.
     mov rdi, [current_task]
     call proc_get_context
     mov r10, rax
 
+
+    ;; Restore state.
     index_context r10, 7
     mov cr3, rax
 
@@ -76,22 +90,12 @@ switch_task:
     mov rcx, rax
 
     index_context r10, 6
-    mov [rsp], rax
+    mov [tmpbuf1], rax
 
     index_context r10, 5
-
-    times 5 pop rax
-    push 0x40 | 3
-    push rbp
-    pushf
-
-    ;; Enable interrupts.
-    mov rax, [rsp]
-    or rax, 1 << 9
-    mov [rsp], rax
-
-    push 0x38 | 3
-    push qword [tmpbuf1]
+    
+    mov r10, [tmpbuf1]
+    mov [rsp], r10
     iretq
 
 section .data
