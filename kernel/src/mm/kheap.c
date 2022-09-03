@@ -107,14 +107,12 @@ KHEAP_STATUS_T kheap_status(void) {
 
 
 void* kmalloc_user(size_t n_bytes) {
-    CLI;
     void* block = kmalloc(n_bytes);
 
     for (uint64_t i = (uint64_t)block; i < (uint64_t)(block + n_bytes); ++i) {
         vmm_map_page(cur_pml4, i, PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
     }
 
-    STI;
     return block;
 }
 
