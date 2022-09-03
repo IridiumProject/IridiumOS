@@ -21,7 +21,17 @@ void __attribute__((interrupt)) irq1_isr(void* stack_frame) {
     // Read in the scancode.
     uint16_t scancode = inportb(0x60);
     char character = SC_ASCII[scancode];
-    uint8_t pressed = !(scancode & 0x80);
+    uint8_t pressed = 0;
+
+    if (!(scancode & 0x80)) {
+        if ((SC_ASCII[scancode] >= 'a' && SC_ASCII[scancode] <= 'z') || 
+                (SC_ASCII[scancode] >= 'A' && SC_ASCII[scancode] <= 'Z') || 
+                (SC_ASCII[scancode] >= '0' && SC_ASCII[scancode]) <= '9' || 
+                (SC_ASCII[scancode] >= '!' && SC_ASCII[scancode] <= '.') || 
+                (SC_ASCII[scancode] >= '[' && SC_ASCII[scancode] <= '`')) {
+            pressed = 1;
+        }
+    }
 
     last_keystroke = (pressed << 24 | character << 16 | scancode);
     lapic_send_eoi();
