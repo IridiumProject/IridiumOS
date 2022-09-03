@@ -1,11 +1,13 @@
 #include <intr/syscall.h>
 #include <common/log.h>
+#include <common/elf.h>
 #include <uapi/sysreq.h>
 #include <proc/drvmaster.h>
+#include <proc/proc.h>
 #include <stdint.h>
 
 // Change SYSCALL_COUNT not g_SYSCALL_COUNT.
-#define SYSCALL_COUNT 3
+#define SYSCALL_COUNT 4
 const uint16_t g_SYSCALL_COUNT = SYSCALL_COUNT;
 
 struct SyscallRegs {
@@ -55,8 +57,32 @@ static void sys_claimdrv(void) {
 }
 
 
+/*  
+ *  Spawns a process from an ELF in initrd.
+ *
+ *  TODO: Remove this when finished with disk driver.
+ *
+ *  RBX: Filename.
+ *  RCX: If calling task does not have PPERM_PERM leave RCX 0, otherwise permissions if needed.
+ *  Returned in RAX: if value is >= 1 it is the PID otherwise if < 0 it is an error code.
+ *
+ */
+
+static void sys_ird_spawn(void) {
+    size_t unused;
+    char* code = elf_get_entry((char*)syscall_regs.rbx, &unused);
+    
+    if (code == NULL) {
+        syscall_regs.rax = -ENOENT;
+    } else {
+        syscall_regs.rax = spawn(code, syscall_regs.rcx);
+    }
+}
+
+
 void(*syscall_table[SYSCALL_COUNT])(void) = {
     sys_hello,                          // 0x0.
     sys_req,                            // 0x1.
-    sys_claimdrv                        // 0x2.
+    sys_claimdrv,                       // 0x2.
+    sys_ird_spawn,                      // 0x3.
 };
