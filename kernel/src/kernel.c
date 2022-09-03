@@ -20,12 +20,6 @@
 #include <uapi/input/keyboard.h>
 #include <uapi/video/screen.h>
 
-static void done(void) {
-    for (;;) {
-        __asm__("hlt");
-    }
-}
-
 
 static void uapi_init(void) {
     keyboard_uapi_init();
@@ -33,7 +27,7 @@ static void uapi_init(void) {
 }
 
 
-static void init(void) {
+static void __attribute__((noreturn)) init(void) {
     intr_init();
     kprintf(STATUS_MSG_COLOR "[Interrupts Init]:" STATUS_MSG_OK_COLOR " OK\n");
     pmm_init();
@@ -68,8 +62,7 @@ static void init(void) {
     
     uapi_init();
     start_init_system();
-
-    done();
+    while (1);
 }
 
 void _start(void) {
