@@ -1,5 +1,6 @@
 #include <common/elf.h>
 #include <common/string.h>
+#include <common/log.h>
 #include <proc/proc.h>
 #include <mm/kheap.h>
 #include <mm/vmm.h>
@@ -7,11 +8,11 @@
 #include <stdint.h>
 
 extern struct Process* current_task;
-static Elf64_Phdr* progHeaders;
 
 void* elf_get_entry(const char* path, size_t* phdrs_size) {
     // Open up path to ELF from initrd.
     char* elf_ptr = initrd_open(path);
+    Elf64_Phdr* progHeaders;
 
     if (elf_ptr == NULL) {
         return NULL;
