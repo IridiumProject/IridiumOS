@@ -4,6 +4,7 @@
 #include <common/panic.h>
 #include <common/asm.h>
 #include <mm/kheap.h>
+#include <stddef.h>
 #include <limine.h>
 
 
@@ -25,7 +26,7 @@ struct TarHeader {
 };
 
 
-static struct limine_file* initrd = NULL;
+static const struct limine_file* initrd = NULL;
 
 static size_t getsize(const char* in) {
     size_t size = 0;
@@ -77,16 +78,19 @@ void* initrd_open(const char* path) {
         return NULL;
     }
 
-    char* initrd_data = initrd->address + 0x200;        // Get passed directory name.
-    struct TarHeader* header = (struct TarHeader*)initrd_data;
+    uint64_t address = (uint64_t)(initrd->address + 0x200);
+    struct TarHeader* header = (struct TarHeader*)address;
 
-    while (header->filename[0] != '\0') { 
+    while (header->filename[0] != '\0') {
+        header = (struct TarHeader*)address;
+        size_t sz = getsize(header->size);
         if (strcmp(header->filename, path) == 0) {
-            return get_buf(initrd_data, getsize(header->size));
+            return get_buf((char*)address, sz);
         }
 
-        initrd_data += 0x400;                       // Get passed first file.
-        header = (struct TarHeader*)initrd_data;
+        address += (((sz + 511) / 512) + 1) * 512;
+
+
     }
 
     // File not found.
