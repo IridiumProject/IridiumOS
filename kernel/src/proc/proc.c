@@ -15,6 +15,7 @@ extern PML4* cur_pml4;
 
 
 static uint64_t ret_rip;
+static PID_T next_pid = 1;
 
 __attribute__((naked)) void proc_init(void) {
     // Ensure this function isn't called twice.
@@ -34,7 +35,7 @@ __attribute__((naked)) void proc_init(void) {
     ASSERT(queue_base != NULL);
 
     // Setup queue head/base.
-    queue_base->pid = 1;
+    queue_base->pid = next_pid++;
     queue_base->state = PSTATE_READY;
     queue_base->prev = queue_base;
     queue_base->next = queue_base;
@@ -57,9 +58,9 @@ __attribute__((naked)) void proc_init(void) {
      *  because kmalloc() uses the cur_pml4 variable
      *  for mapping the allocated memory.
      */
-    cur_pml4 = (PML4*)queue_base->context[PCTX_CR3];
+    // cur_pml4 = (PML4*)queue_base->context[PCTX_CR3];
 
-    __asm__ __volatile__("mov %0, %%cr3" :: "r" (cur_pml4));
+    __asm__ __volatile__("mov %0, %%cr3" :: "r" (queue_base->context[PCTX_CR3]));
 
     // Allocate a new stack.
     queue_base->context[PCTX_RSP] = (uint64_t)kmalloc_user(STACK_SIZE) + (STACK_SIZE - 10);
@@ -135,4 +136,53 @@ ERRNO_T perm_revoke(PID_T pid, PPERM_T perms) {
             return EXIT_FAILURE;
         } 
     }
+}
+
+
+PID_T spawn(void* rip, PPERM_T permissions) {
+    CLI;
+
+    if (permissions != 0 && !(current_task->perm_mask & PPERM_PERM)) {
+        return -EPERM;
+    }
+
+    struct Process* prev = queue_head;
+    queue_head->next = kmalloc(sizeof(struct Process));
+    queue_head = queue_head->next;
+    queue_head->pid = next_pid++;
+    queue_head->perm_mask = permissions;
+    queue_head->state = PSTATE_READY;
+    queue_head->n_slave_driver_groups = 0;
+    queue_head->next = queue_base;
+    queue_head->prev = prev;
+
+    // Setup vaddrsp.
+    queue_head->context[PCTX_CR3] = (uint64_t)mkpml4();
+    // cur_pml4 = (PML4*)queue_head->context[PCTX_CR3];
+
+    // Temporaily change address spaces.
+    __asm__ __volatile__("mov %0, %%cr3" :: "r" (queue_head->context[PCTX_CR3]));
+
+    // Setup stack.
+    queue_head->context[PCTX_RSP] = (uint64_t)kmalloc_user(STACK_SIZE) + (STACK_SIZE - 10);
+    queue_head->context[PCTX_RBP] = queue_head->context[PCTX_RSP];
+    queue_head->context[PCTX_RIP] = (uint64_t)rip;
+
+    // Setup IRET stack frame for this task.
+    uint64_t* stack = (uint64_t*)queue_head->context[PCTX_RSP];
+    stack[4] = 0x40 | 3;
+    stack[3] = queue_head->context[PCTX_RSP];
+    uint64_t rflags = 0;
+    __asm__ __volatile__("pushf; pop %0" : "=r" (rflags));
+    rflags |= 0x200;
+
+    stack[2] = rflags;
+    stack[1] = 0x38 | 3;
+    stack[0] = (uint64_t)rip;
+    return queue_head->pid;
+}
+
+
+void proc_set_state(struct Process* root, PSTATE_T state) {
+    root->state = state;
 }

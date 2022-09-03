@@ -21,13 +21,13 @@
 #define PPERM_DRVCLAIM  (1 << 1)
 
 
-typedef uint16_t PID_T;
+typedef int16_t PID_T;
 typedef uint32_t PPERM_T;
 
 typedef enum {
-    PSTATE_BLOCKED,
-    PSTATE_RUNNING,
-    PSTATE_READY
+    PSTATE_BLOCKED = 0,
+    PSTATE_RUNNING = 1,
+    PSTATE_READY = 2
 } PSTATE_T;
 
 
@@ -58,10 +58,17 @@ __attribute__((naked)) void proc_init(void);
 // Assembly helpers for proc.asm
 uint64_t* proc_get_context(struct Process* root);
 struct Process* proc_get_next(struct Process* root);
+void proc_set_state(struct Process* root, PSTATE_T state);
 
 // Permission related stuff.
 ERRNO_T perm_grant(PID_T pid, PPERM_T perms);
 ERRNO_T perm_revoke(PID_T pid, PPERM_T perms);
+
+
+// Process creation/deletion.
+
+// Returns < 0 as error code if something goes wrong.
+PID_T spawn(void* rip, PPERM_T permissions);
 
 
 #endif
