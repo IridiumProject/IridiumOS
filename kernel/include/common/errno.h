@@ -6,6 +6,8 @@ enum {
     EXIT_FAILURE,           // Some unlisted failure.
     ENOBUFS,                // No buffer space left.
     EPERM,                  // Permission denied.
+    ENOMEM,                 // Out of memory.
+    ENOENT,                 // File or directory does not exist.
     EDRVCLAIMED,            // Daemons can get this error if a double claim occurs.
 };
 
