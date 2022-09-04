@@ -1,5 +1,7 @@
-#ifndef KERRNO_H
-#define KERRNO_H
+#ifndef ERRNO_H
+#define ERRNO_H
+
+#include <stdint.h>
 
 enum {
     EXIT_SUCCESS,           // Everything went alright! :D
