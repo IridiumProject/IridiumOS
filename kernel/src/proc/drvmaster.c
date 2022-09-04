@@ -1,6 +1,5 @@
 #include <proc/drvmaster.h>
 #include <proc/proc.h>
-#include <common/log.h>
 #include <stddef.h>
 
 #define DRIVERTYPE_ARR_INDEX(driver_type) driver_type - 1
@@ -14,7 +13,6 @@ static uint8_t drivertypes[DRIVERTYPE_COUNT];
 
 
 ERRNO_T drv_claim(DRIVER_TYPE_T driver_type) { 
-    kprintf("PID: %x\n", current_task->pid);
     if (DRIVERTYPE_ARR_INDEX(driver_type) >= DRIVERTYPE_COUNT || DRIVERTYPE_ARR_INDEX(driver_type) < 0) {
         // Invalid driver_type.
         return -EXIT_FAILURE;
@@ -22,7 +20,7 @@ ERRNO_T drv_claim(DRIVER_TYPE_T driver_type) {
 
     if (drivertypes[DRIVERTYPE_ARR_INDEX(driver_type)] != 0) {
         // Already claimed, maybe a double claim occured (i.e trying to claim twice).
-        return EDRVCLAIMED;
+        return -EDRVCLAIMED;
     }
 
     for (size_t i = 0; i < current_task->n_slave_driver_groups; ++i) {
@@ -39,12 +37,12 @@ ERRNO_T drv_claim(DRIVER_TYPE_T driver_type) {
 
     if (!(current_task->perm_mask & PPERM_DRVCLAIM)) {
         // Does not have PPERM_DRVCLAIM.
-        kprintf("%x\n", current_task->perm_mask);
         return -EPERM;
     }
 
     drivertypes[DRIVERTYPE_ARR_INDEX(driver_type)] = 1;
     current_task->slave_driver_groups[current_task->n_slave_driver_groups++] = driver_type;
+    return EXIT_SUCCESS;
 }
 
 
