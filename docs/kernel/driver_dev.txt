@@ -1,0 +1,68 @@
+PLEASE READ THE FOLLOWING BEFORE READING THIS DOC:
+
+- docs/daemon/display_daemon.txt
+- docs/dev/device_management.txt
+
+
+This will explain how you can develop/add to drivers in Iridium!
+
+Let's first explain how you can modify an existing driver, we use
+the video driver as an example.
+
+
+NOTICE: Only add what NEEDS to be in the driver.
+        for example, a video driver doesn't need a draw square/draw window or 
+        whatever because the video driver's job is to draw pixels not windows,
+        that is a graphics lib's job, NOT the drivers job.
+
+
+Add your interface in kernel/include/drivers/video/lfb.h and implementation in 
+kernel/src/drivers/video/lfb.c
+
+Now in Iridium we also have what's called a UAPI (user API), this is what
+the sysreq syscall can access.
+Every driver that will be exposed to userland has it's own UAPI.
+
+Now since our example is the video driver we will start editing 
+kernel/include/video/screen.h and you will see an anonymous enum 
+
+(this anonymous enum will be in other UAPIs. It allows you to specify requests
+that you can use to interact with parts of the drivers interface). 
+
+You will need to add what interface you want to expose to this enum. For example, 
+if a draw_pixel function is to be exposed you would put <UAPI TYPE>UAPI_DRAW_PIXEL so:
+SCREENUAPI_DRAW_PIXEL.
+
+Now edit kernel/src/uapi/video/screen.c
+
+(reminder: we are using video driver as an example)
+
+The video driver's UAPI uses something called command bursting where
+multiple requests can be made and the requests following the first request
+will be treated as arguments.
+
+<---- COMMAND BURSTING STANDARD ---->
+You will need to have a static local variable (a variable that saves state between function calls) 
+and in the switch statement for checking the request you will set saved_req(the static local variable) to
+the request.
+
+Then in the default part of the switch statement you will process the arguments.
+To keep things clean, use a seperate function to process the args.
+
+You can look at the video driver's process_req() in kernel/src/uapi/video/screen.c
+as an example.
+<---- END COMMAND BURSTING STANDARD ---->
+
+This is an example of handling a request with a UAPI that doesn't use command bursting.
+
+static UAPI_STATUS_T keyboard_uapi(UAPI_REQ_T req, UAPI_OUT_T* output) {
+    switch (req) {
+        case KEYBUAPI_FETCH_KEYSTROKE:
+            *output = ps2_fetch_keystroke();
+            return UAPI_OK;
+    }
+
+    return UAPI_INVALID_ARG;
+}
+
+TODO: WHEN ADDING GFXD INTERFACE UPDATE THIS.
