@@ -1,0 +1,5 @@
+The display daemon is a system program that has ownership over the graphics drivers.
+It will initialize some graphics related things and expose it's own interface to, 
+for example, open windows, close windows, etc.
+
+Now, a desktop enviorement can use the display daemons interface to do whatever it needs.
