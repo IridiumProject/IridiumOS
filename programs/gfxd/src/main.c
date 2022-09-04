@@ -2,12 +2,7 @@
 #include <sys/sysreq.h>
 
 
-static void clear_screen(void) {
-}
-
-
 int main(void) {
-    ERRNO_T errno;
     /*
      *  We, the display daemon have the PPERM_DRVCLAIM permission
      *  thus we can claim the display driver.
@@ -16,6 +11,7 @@ int main(void) {
      *  TODO: Handle errors.
      *
      */
+    ERRNO_T errno;
     if ((errno = claimdrv(DRIVERTYPE_DISPLAY)) == EXIT_SUCCESS) {  
         sysreq(UAPI_SCREEN_SERVICE, 0x0, NULL);
         sysreq(UAPI_SCREEN_SERVICE, 0x090909, NULL);
