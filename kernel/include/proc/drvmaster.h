@@ -31,6 +31,7 @@
 
 
 // THESE DRIVER CATEGORIES NEED TO BE CLAIMED.
+// NOTE: Update libiridum/include/sys/drvctl.h if this is changed.
 typedef enum {
     DRIVERTYPE_NONE,
     DRIVERTYPE_DISPLAY,
