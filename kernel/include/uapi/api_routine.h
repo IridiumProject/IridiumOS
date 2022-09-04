@@ -6,6 +6,7 @@
 typedef uint16_t UAPI_SERVICE_T;
 typedef uint64_t UAPI_REQ_T;
 typedef uint64_t UAPI_OUT_T;
+typedef UAPI_REQ_T UAPI_DATA_T;
 typedef enum {
     UAPI_OK = 0,
     UAPI_INVALID_ARG = 1,

@@ -5,8 +5,6 @@
 
 #define MAXARGS_CLEARSCREEN 1
 
-
-typedef UAPI_REQ_T UAPI_DATA_T;
 static UAPI_REQ_T current_request;
 
 
