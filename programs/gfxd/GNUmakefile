@@ -7,7 +7,7 @@ CC = x86_64-elf-gcc
 all: build link
 
 build: $(CFILES)
-	$(CC) $^ -Iinclude/ \
+	$(CC) $^ -Iinclude/ -I../../libiridium/include/ \
 	    -std=gnu11           \
 	    -ffreestanding       \
 	    -fno-stack-protector \
@@ -28,5 +28,5 @@ build: $(CFILES)
 		-c
 
 link:
-	ld -Tlink.ld *.o -o ../bin/$(OUTPUT)
+	ld -Tlink.ld *.o -L../../libiridium/ -l:lib_iridium.a -o ../bin/$(OUTPUT)
 	rm *.o
