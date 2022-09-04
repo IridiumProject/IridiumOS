@@ -53,7 +53,7 @@ static void sys_req(void) {
  */
 
 static void sys_claimdrv(void) {
-    drv_claim(syscall_regs.rbx);
+    syscall_regs.rax = drv_claim(syscall_regs.rbx);
 }
 
 
