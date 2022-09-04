@@ -14,6 +14,33 @@ typedef enum {
     L_COLOR,
 } INDEX_LABELS;
 
+/*
+ *  @param saved_req is the first request.
+ *  @param req is the last request.
+ *
+ */
+
+static UAPI_STATUS_T process_req(UAPI_REQ_T saved_req, UAPI_REQ_T req) {
+    // Static variables for different requests.
+    static UAPI_DATA_T color;
+    static uint8_t data_index = L_COLOR;            // FIXME: CHANGE THIS WHEN MORE REQUESTS ARE ADDED.
+
+    switch (saved_req) {
+        case SCREENUAPI_CLEARSCREEN:
+            if (data_index == L_COLOR) {
+                color = req;                        // Treat req as other input data.
+            }
+
+            ++data_index;
+            if (data_index >= MAXARGS_CLEARSCREEN) {
+                lfb_clear_screen((uint32_t)color);
+                return UAPI_OK;
+            }
+    }
+
+    return UAPI_UNKNOWN_ERROR;
+}
+
 
 /*
  *  Cmdbursting is when the client (other end of the interface)
@@ -27,25 +54,14 @@ static UAPI_STATUS_T screen_uapi(UAPI_REQ_T req, UAPI_OUT_T* output) {
         return UAPI_PERMISSION_DENIED;
     }
 
-    static uint8_t cmdbursting = 0;
-    static uint8_t data_index = L_COLOR;
-    static UAPI_DATA_T color;
+    static UAPI_REQ_T saved_req;
 
     switch (req) {
         case SCREENUAPI_CLEARSCREEN:
-            cmdbursting = 1;
+            saved_req = SCREENUAPI_CLEARSCREEN;
             break;
         default:
-            if (data_index == L_COLOR) {
-                color = req;                        // Treat req as other input data.
-            }
-
-            ++data_index;
-            if (data_index >= MAXARGS_CLEARSCREEN) {
-                cmdbursting = 0;
-                lfb_clear_screen((uint32_t)color);
-                return UAPI_OK;
-            }
+            process_req(saved_req, req);
             break;
     }
 
