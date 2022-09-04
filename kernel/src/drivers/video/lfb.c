@@ -27,8 +27,16 @@ void lfb_put_pixel(uint32_t x, uint32_t y, uint32_t color) {
 
 
 void lfb_clear_screen(uint32_t color) {
+    /*
     for (uint32_t i = 0; i < FRAMEBUFFER->pitch * FRAMEBUFFER->height; ++i) {
         ((uint32_t*)FRAMEBUFFER->address)[i] = color;
+    }
+    */
+
+    for (uint32_t y = 0; y < FRAMEBUFFER->height; ++y) {
+        for (uint32_t x = 0; x < FRAMEBUFFER->width; ++x) {
+            ((uint32_t*)FRAMEBUFFER->address)[get_pixel_index(x, y)] = color;
+        }
     }
 }
 
