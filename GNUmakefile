@@ -37,6 +37,9 @@ setup:
 kernel: linkobj initrd
 
 Iridium.iso: kernel
+	cd libiridium/; make
+	cp kernel/include/common/errno.h libiridium/include/errno.h
+	cat kernel/include/uapi/service_def.h | sed 's/SERVICE_DEF_H/SYSREQ_SERVICES_H/g' > libiridium/include/_sysreq_services.h
 	cd programs/; make
 	make -C limine
 	mkdir -p base/internals/
