@@ -1,3 +1,10 @@
-Sysreq's purpose is for device interaction.
+Sysreq's purpose is for device interaction or just interacting with a general user API.
 NOTE: You can only sysreq devices that are has it's 
-driver non-claimable (i.e not in the claimable list [see kernel/include/proc/drvmaster.h])
+driver non-claimable (i.e not in the claimable list [see kernel/include/proc/drvmaster.h]).
+
+Anything in the claimable list can only be used by a process that has PPERM_DRVCLAIM and that has claimed 
+the driver.
+
+
+Again, sysreq can be used for either talking to a device or using some service 
+non related to device interaction.
