@@ -19,11 +19,13 @@
 #include <bus/pci/pci.h>
 #include <uapi/input/keyboard.h>
 #include <uapi/video/screen.h>
+#include <uapi/proc/info.h>
 
 
 static void uapi_init(void) {
     keyboard_uapi_init();
     screen_uapi_init();
+    procinfo_uapi_init();
 }
 
 
