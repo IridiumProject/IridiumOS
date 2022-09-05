@@ -24,7 +24,7 @@ run: Iridium.iso
 
 .PHONY: debug
 debug: Iridium.iso
-	qemu-system-$(ARCH) -M q35 -m 2G -drive file=Iridium.iso -boot d -monitor stdio -serial telnet:localhost:4321,server,nowait -smp 2 -d int -D logfile.txt
+	qemu-system-$(ARCH) -M q35 -m 2G -drive file=Iridium.iso -boot d -monitor stdio -serial telnet:localhost:4321,server,nowait -smp 2 -d int
 
 .PHONY: debug1
 debug1:
@@ -39,6 +39,7 @@ kernel: linkobj initrd
 Iridium.iso: kernel
 	cd libiridium/; make
 	cp kernel/include/common/errno.h libiridium/include/errno.h
+	cp kernel/include/proc/perm.h programs/init/include/perm.h
 	cat kernel/include/uapi/service_def.h | sed 's/SERVICE_DEF_H/SYSREQ_SERVICES_H/g' > libiridium/include/_sysreq_services.h
 	cd programs/; make
 	make -C limine
