@@ -3,24 +3,13 @@
 
 #include <stdint.h>
 #include <proc/drvmaster.h>
+#include <proc/perm.h>
 #include <common/errno.h>
 
 #define PCONTEXT_SIZE 8
 
-/*
- *  A task with this permission
- *  can grant/revoke other takes
- *  permissions (BE CAREFUL WITH THIS!!)
- */
-#define PPERM_PERM      (1 << 0)
-
-/*
- *  Allows a process to claim a limited amount of drivers.
- *
- */
-#define PPERM_DRVCLAIM  (1 << 1)
-
-
+// If changing any of these typedefs, update 
+// libiridium/include/sys/process.h
 typedef int16_t PID_T;
 typedef uint32_t PPERM_T;
 
