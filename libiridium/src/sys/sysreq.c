@@ -1,7 +1,6 @@
 #include <sys/sysreq.h>
 
-__attribute__((naked))
-uint64_t sysreq(UAPI_SERVICE_NUM_T service_num, uint64_t request, uint64_t* output) {
+_syscallab uint64_t sysreq(UAPI_SERVICE_NUM_T service_num, uint64_t request, uint64_t* output) {
     static uint64_t unused;
     if (output == NULL) {
         output = &unused;

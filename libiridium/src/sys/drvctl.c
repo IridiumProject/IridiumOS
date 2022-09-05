@@ -3,7 +3,7 @@
 
 static ERRNO_T errno;
 
-__attribute__((naked)) ERRNO_T claimdrv(DRIVER_TYPE_T driver_cat) {
+_syscallab ERRNO_T claimdrv(DRIVER_TYPE_T driver_cat) {
 
     __asm__ __volatile__(
             "\

@@ -2,6 +2,7 @@
 #define LIBIRIDIUM__SYS__DRVCTL_H
 
 #include <errno.h>
+#include <sys/syscall.h>
 
 typedef enum {
     DRIVERTYPE_NONE,
@@ -9,7 +10,7 @@ typedef enum {
 } DRIVER_TYPE_T;
 
 
-__attribute__((naked)) ERRNO_T claimdrv(DRIVER_TYPE_T driver_cat);
+_syscallab ERRNO_T claimdrv(DRIVER_TYPE_T driver_cat);
 
 
 #endif
