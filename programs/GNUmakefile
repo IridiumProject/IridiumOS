@@ -1,5 +1,5 @@
 .PHONY: all
 all:
 	mkdir -p bin/
-	cd init; make
-	cd gfxd; make
+	cd sys/init; make
+	cd sys/gfxd; make

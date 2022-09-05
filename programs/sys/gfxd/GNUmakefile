@@ -1,13 +1,14 @@
-OUTPUT = init.sys
+OUTPUT = gfxd.sys
 CFILES = $(shell find src/ -name "*.c")
 CC = x86_64-elf-gcc
+LIBC_PATH = ../../../libiridium/
 
 
 .PHONY: all
 all: build link
 
 build: $(CFILES)
-	$(CC) $^ -Iinclude/ -I../../libiridium/include/ \
+	$(CC) $^ -Iinclude/ -I$(LIBC_PATH)/include \
 	    -std=gnu11           \
 	    -ffreestanding       \
 	    -fno-stack-protector \
@@ -28,5 +29,5 @@ build: $(CFILES)
 		-c
 
 link:
-	ld -Tlink.ld *.o -L../../libiridium/ -l:lib_iridium.a -o ../bin/$(OUTPUT)
+	ld -Tlink.ld *.o -L$(LIBC_PATH) -l:lib_iridium.a -o ../../bin/$(OUTPUT)
 	rm *.o
