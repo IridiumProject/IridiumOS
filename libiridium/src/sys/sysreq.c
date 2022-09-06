@@ -13,7 +13,7 @@ _syscallab uint64_t sysreq(UAPI_SERVICE_NUM_T service_num, uint64_t request, uin
             mov %1, %%rcx;   /* Request num */  \
             int $0x80;       /* Syscall */      \
             mov %%rbx, %0;   /* Output */       \
-            retq" : "=r" (*output)
-                  : "m" (request),
-                    "m" (service_num));
+            retq"             : "=r" (*output)
+                              : "m" (request),
+                                "m" (service_num));
 }

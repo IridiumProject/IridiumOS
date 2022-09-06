@@ -8,5 +8,4 @@
 // The '_' prefix in this case is ONLY to tell that this is an attribute.
 // '_' prefix with macros and functions mean two different things.
 #define _syscallab __attribute__((naked))
-
 #endif
