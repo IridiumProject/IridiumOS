@@ -40,6 +40,11 @@ dispatch_syscall:
     set_reg_at 7, r9
     set_reg_at 8, r10
     
+    mov rdi, saved_stack            ;; DEST.
+    mov rsi, rsp                    ;; SOURCE.
+    mov rcx, 40                     ;; COUNT.
+    rep movsq
+    
     mov r11, syscall_table
     imul rax, 8
     add r11, rax
@@ -70,7 +75,16 @@ dispatch_syscall:
     get_reg_at 8
     mov r10, rax
 
+    times 5 pop rax
     get_reg_at 0
+
+    mov rdi, rsp
+    mov rsi, saved_stack
+    mov rcx, 40
+    rep movsq
 
     .done:
         iretq
+
+section .bss
+saved_stack: resq 40
