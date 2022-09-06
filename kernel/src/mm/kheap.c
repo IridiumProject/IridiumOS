@@ -75,7 +75,7 @@ void* kmalloc(size_t n_bytes) {
     struct KHeapBlock* tmp = (struct KHeapBlock*)DATA_START(region);
 
     for (int i = 0; i < n_bytes; i += DEFAULT_PAGE_SIZE) {
-        vmm_map_page(vmm_get_vaddrsp(), (uint64_t)tmp, PAGE_PRESENT | PAGE_WRITABLE);
+        vmm_map_page(vmm_get_vaddrsp(), (uint64_t)ALIGN_DOWN((uint64_t)tmp, 0x1000), PAGE_PRESENT | PAGE_WRITABLE);
 
         tmp += 0x1000;
     }
