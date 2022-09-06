@@ -29,5 +29,5 @@ build: $(CFILES)
 		-c
 
 link:
-	ld -Tlink.ld *.o -L$(LIBC_PATH) -l:lib_iridium.a -o ../../bin/$(OUTPUT)
+	ld *.o -Tlink.ld -L$(LIBC_PATH) -l:lib_iridium.a -o ../../bin/$(OUTPUT)
 	rm *.o

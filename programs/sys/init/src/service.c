@@ -15,14 +15,14 @@ _syscallab static PID_T _initrd_spawn(const char* path, PPERM_T pmask) {
             mov %1, %%rcx; /* PPERM_<@param pmask> */    \
             int $0x80;                                   \
             retq" :: "m" (path), "m" (pmask));
+    
 }
 
 void _service_create(const char* path, const char* name, const char* description, PPERM_T pmask) {
-    struct Service service;
+    static struct Service service;
     service.perm_mask = pmask;
     service.service_name = name;
-    service.service_description = description;
-    
+    service.service_description = description; 
     service.pid = _initrd_spawn(path, pmask);
     services[service.pid] = service;
 }

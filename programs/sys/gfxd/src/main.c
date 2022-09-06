@@ -1,6 +1,7 @@
 #include <sys/drvctl.h>
 #include <sys/sysreq.h>
 
+int a;
 
 int main(void) {
     /*
