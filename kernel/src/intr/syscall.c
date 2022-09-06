@@ -4,6 +4,7 @@
 #include <uapi/sysreq.h>
 #include <proc/drvmaster.h>
 #include <proc/proc.h>
+#include <fs/initrd.h>
 #include <stdint.h>
 
 // Change SYSCALL_COUNT not g_SYSCALL_COUNT.
@@ -69,14 +70,8 @@ static void sys_claimdrv(void) {
  */
 
 static void sys_ird_spawn(void) {
-    size_t unused;
-    char* code = elf_get_entry((char*)syscall_regs.rbx, &unused);
-    
-    if (code == NULL) {
-        syscall_regs.rax = -ENOENT;
-    } else {
-        syscall_regs.rax = spawn(code, syscall_regs.rcx);
-    }
+    // TODO: Error checking ASAP.
+    spawn(NULL, (const char*)syscall_regs.rbx, syscall_regs.rcx);
 }
 
 
