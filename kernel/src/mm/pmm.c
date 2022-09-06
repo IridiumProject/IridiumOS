@@ -5,6 +5,7 @@
 #include <common/asm.h>
 #include <limine.h>
 #include <stddef.h>
+#include <sync/mutex.h>
 
 #define BITMAP_FREE 0x1
 
@@ -30,6 +31,8 @@ static uint64_t bitmap_length = 0;
 static uint64_t bitmap_i = 2;
 
 uint64_t pmm_alloc(void) {
+    static MUTEX_T lock = MUTEX_UNLOCKED;
+    mutex_acquire(&lock);
     while (bitmap[bitmap_i] != BITMAP_FREE) {
         if (bitmap_i >= bitmap_length - 1) {
             return 0;
@@ -39,11 +42,14 @@ uint64_t pmm_alloc(void) {
     }
 
     bitmap[bitmap_i] = 0;
+    mutex_release(&lock);
     return 0x1000*bitmap_i++;
 }
 
 
 void vmm_free(uint64_t base) {
+    MUTEX_T lock = MUTEX_UNLOCKED;
+    mutex_acquire(&lock);
     for (uint32_t i = 0; i < bitmap_length; ++i) {
         if (0x1000*i == base) {
             bitmap[i] = BITMAP_FREE;
@@ -51,6 +57,8 @@ void vmm_free(uint64_t base) {
             break;
         }
     }
+
+    mutex_release(&lock);
 }
 
 
