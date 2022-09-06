@@ -3,13 +3,12 @@
 #include <common/log.h>
 #include <proc/proc.h>
 #include <mm/kheap.h>
-#include <mm/vmm.h>
 #include <fs/initrd.h>
 #include <stdint.h>
 
 extern struct Process* current_task;
 
-void* elf_get_entry(const char* path, size_t* phdrs_size) {
+void* elf_get_entry(const char* path, size_t* phdrs_size, PML4 cr3) {
     // Open up path to ELF from initrd.
     char* elf_ptr = initrd_open(path);
     Elf64_Phdr* progHeaders;
@@ -57,7 +56,7 @@ void* elf_get_entry(const char* path, size_t* phdrs_size) {
             Elf64_Addr segment = phdr->p_paddr;
 
             for (uint64_t i = segment; i < (segment + n_pages)*2; i += 0x1000) {
-                vmm_map_page((PML4*)current_task->context[PCTX_CR3], i, PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
+                vmm_map_page((void*)cr3, i, PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
             }
 
             elf_ptr = (char*)ORIG_ELF_PTR + phdr->p_offset;

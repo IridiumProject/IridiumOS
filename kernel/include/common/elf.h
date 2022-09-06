@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <mm/vmm.h>
 
 /* Type for a 16-bit quantity.  */
 typedef uint16_t Elf32_Half;
@@ -460,5 +461,5 @@ typedef struct
  *
  */
 
-void* elf_get_entry(const char* path, size_t* phdrs_size);
+void* elf_get_entry(const char* path, size_t* phdrs_size, PML4 cr3);
 #endif
