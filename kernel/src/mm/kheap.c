@@ -15,7 +15,7 @@
  *
  */
 static size_t bytes_allocated = 0;
-extern PML4* cur_pml4;                  // From mm/vmm.c
+extern PML4* vmm_get_vaddrsp();                  // From mm/vmm.c
 
 struct KHeapBlock {
     uint8_t is_free : 1;
@@ -75,7 +75,7 @@ void* kmalloc(size_t n_bytes) {
     struct KHeapBlock* tmp = (struct KHeapBlock*)DATA_START(region);
 
     for (int i = 0; i < n_bytes; i += DEFAULT_PAGE_SIZE) {
-        vmm_map_page(cur_pml4, (uint64_t)tmp, PAGE_PRESENT | PAGE_WRITABLE);
+        vmm_map_page(vmm_get_vaddrsp(), (uint64_t)tmp, PAGE_PRESENT | PAGE_WRITABLE);
 
         tmp += 0x1000;
     }
@@ -109,8 +109,8 @@ KHEAP_STATUS_T kheap_status(void) {
 void* kmalloc_user(size_t n_bytes) {
     void* block = kmalloc(n_bytes);
 
-    for (uint64_t i = (uint64_t)block; i < (uint64_t)(block + n_bytes); ++i) {
-        vmm_map_page(cur_pml4, i, PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
+    for (uint64_t i = (uint64_t)ALIGN_DOWN((uint64_t)block, 0x1000); i < (uint64_t)(block + n_bytes); i += 0x1000) {
+        vmm_map_page(vmm_get_vaddrsp(), i, PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
     }
 
     return block;
@@ -138,7 +138,7 @@ void kfree(void* block) {
         // uint64_t unmap_addr = (uint64_t)DATA_START(region);
         uint64_t unmap_addr = (uint64_t)region;
         region = region->prev;
-        vmm_unmap_page(cur_pml4, unmap_addr);
+        vmm_unmap_page(vmm_get_vaddrsp(), unmap_addr);
     }
 
     status = 0;       // Everything went well, status should be zero :)
@@ -146,7 +146,7 @@ void kfree(void* block) {
 
 
 void kheap_init(void) {
-    vmm_map_page(cur_pml4, HEAP_START_ADDR, PAGE_PRESENT | PAGE_WRITABLE);
+    vmm_map_page(vmm_get_vaddrsp(), HEAP_START_ADDR, PAGE_PRESENT | PAGE_WRITABLE);
     heap_head = (struct KHeapBlock*)HEAP_START_ADDR;
     heap_head->size = 0;
     heap_head->next = NULL;
