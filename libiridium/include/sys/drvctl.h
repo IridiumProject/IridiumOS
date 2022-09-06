@@ -2,7 +2,7 @@
 #define LIBIRIDIUM__SYS__DRVCTL_H
 
 #include <errno.h>
-#include <sys/syscall.h>
+#include <sys/_syscall.h>
 
 typedef enum {
     DRIVERTYPE_NONE,

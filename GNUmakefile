@@ -39,6 +39,7 @@ kernel: linkobj initrd
 Iridium.iso: kernel
 	cd libiridium/; make
 	cp kernel/include/common/errno.h libiridium/include/errno.h
+	cp kernel/include/proc/psignal.h libiridium/include/sys/_psignaldef.h
 	cp kernel/include/proc/perm.h programs/sys/init/include/perm.h
 	cat kernel/include/uapi/service_def.h | sed 's/SERVICE_DEF_H/SYSREQ_SERVICES_H/g' > libiridium/include/sys/_sysreq_services.h
 	cd programs/; make

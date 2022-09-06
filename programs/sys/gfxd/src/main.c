@@ -1,7 +1,7 @@
 #include <sys/drvctl.h>
 #include <sys/sysreq.h>
-
-int a;
+#include <sys/process.h>
+#include <ipcmd.h>
 
 int main(void) {
     /*
@@ -12,10 +12,19 @@ int main(void) {
      *  TODO: Handle errors.
      *
      */
-    ERRNO_T errno;
-    if ((errno = claimdrv(DRIVERTYPE_DISPLAY)) == EXIT_SUCCESS) {  
-        sysreq(UAPI_SCREEN_SERVICE, 0x0, NULL);
-        sysreq(UAPI_SCREEN_SERVICE, 0x090909, NULL);
+
+    claimdrv(DRIVERTYPE_DISPLAY);
+    while (1) {
+        PSIGNAL_T ipcmd = psignal_fetch();
+
+        // For now, only respond to init.
+        if (ipcmd != 0 && PSIGNAL_EXTRACT_SOURCE(ipcmd) == 1) {
+            switch (PSIGNAL_EXTRACT_SIGPAYLOAD(ipcmd) & 0xFF) {
+                case GFXDSIG_CLEAR_SCREEN:
+                sysreq(UAPI_SCREEN_SERVICE, 0x0, NULL);
+                sysreq(UAPI_SCREEN_SERVICE, PSIGNAL_EXTRACT_SIGPAYLOAD(ipcmd) >> 8, NULL);
+            }
+        }
     }
 
     while (1);

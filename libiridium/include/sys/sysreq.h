@@ -2,7 +2,7 @@
 #define LIBIRIDIUM__SYS__SYSREQ_H
 
 #include <sys/_sysreq_services.h>
-#include <sys/syscall.h>
+#include <sys/_syscall.h>
 #include <stdint.h>
 #include <stddef.h>
 
