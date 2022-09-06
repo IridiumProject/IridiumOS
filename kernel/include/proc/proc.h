@@ -57,7 +57,9 @@ ERRNO_T perm_revoke(PID_T pid, PPERM_T perms);
 // Process creation/deletion.
 
 // Returns < 0 as error code if something goes wrong.
-PID_T spawn(void* rip, PPERM_T permissions);
+// To use initrd path, set @param rip to NULL and set @path to initrd path.
+// This assumes you have checked that the path exists.
+PID_T spawn(void* rip, const char* path, PPERM_T permissions);
 
 
 #endif

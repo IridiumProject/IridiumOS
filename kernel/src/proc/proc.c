@@ -1,6 +1,8 @@
 #include <proc/proc.h>
 #include <common/debug.h>
 #include <common/asm.h>
+#include <common/elf.h>
+#include <common/log.h>
 #include <mm/kheap.h>
 #include <mm/vmm.h>
 #include <stddef.h>
@@ -139,8 +141,8 @@ ERRNO_T perm_revoke(PID_T pid, PPERM_T perms) {
 }
 
 
-PID_T spawn(void* rip, PPERM_T permissions) {
-    CLI;
+PID_T spawn(void* rip, const char* path, PPERM_T permissions) {
+    CLI; 
 
     if (permissions != 0 && !(current_task->perm_mask & PPERM_PERM)) {
         return -EPERM;
@@ -161,7 +163,13 @@ PID_T spawn(void* rip, PPERM_T permissions) {
     // cur_pml4 = (PML4*)queue_head->context[PCTX_CR3];
 
     // Temporaily change address spaces.
-    __asm__ __volatile__("mov %0, %%cr3" :: "r" (queue_head->context[PCTX_CR3]));
+    uint64_t old_cr3 = (uint64_t)vmm_get_vaddrsp();
+    LOAD_CR3(queue_head->context[PCTX_CR3]);
+
+    if (rip == NULL) {
+        size_t unused;
+        rip = elf_get_entry(path, &unused, queue_head->context[PCTX_CR3]);
+    }
 
     // Setup stack.
     queue_head->context[PCTX_RSP] = (uint64_t)kmalloc_user(STACK_SIZE) + (STACK_SIZE - 10);
@@ -179,6 +187,7 @@ PID_T spawn(void* rip, PPERM_T permissions) {
     stack[2] = rflags;
     stack[1] = 0x38 | 3;
     stack[0] = (uint64_t)rip;
+    LOAD_CR3(old_cr3);
     return queue_head->pid;
 }
 
