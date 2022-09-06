@@ -5,7 +5,6 @@
 #include <common/log.h>
 #include <mm/kheap.h>
 #include <mm/vmm.h>
-#include <stddef.h>
 
 #define STACK_SIZE 0x1000*3
 
@@ -18,6 +17,14 @@ extern PML4* cur_pml4;
 
 static uint64_t ret_rip;
 static PID_T next_pid = 1;
+
+
+static void psignal_queue_init(struct SignalQueue* sigq) {
+    SEMAPHORE_WRITE_INIT(PSIGNAL_QUEUE_SIZE, sigq->qlock);
+    sigq->rwlock = MUTEX_UNLOCKED;
+    sigq->next_index = 0;
+}
+
 
 __attribute__((naked)) void proc_init(void) {
     // Ensure this function isn't called twice.
@@ -48,6 +55,7 @@ __attribute__((naked)) void proc_init(void) {
     queue_base->context[PCTX_RIP] = ret_rip;
     queue_base->n_slave_driver_groups = 0;
     queue_base->perm_mask = PPERM_PERM | PPERM_DRVCLAIM;
+    psignal_queue_init(&queue_base->sigq);
 
     // Allocate a new address space.
     queue_base->context[PCTX_CR3] = (uint64_t)mkpml4();
@@ -135,7 +143,7 @@ ERRNO_T perm_revoke(PID_T pid, PPERM_T perms) {
 
         if (current == queue_base) {
             // We are back at the beginning, could not find process.
-            return EXIT_FAILURE;
+            return -EXIT_FAILURE;
         } 
     }
 }
@@ -157,6 +165,7 @@ PID_T spawn(void* rip, const char* path, PPERM_T permissions) {
     queue_head->n_slave_driver_groups = 0;
     queue_head->next = queue_base;
     queue_head->prev = prev;
+    psignal_queue_init(&queue_head->sigq);
 
     // Setup vaddrsp.
     queue_head->context[PCTX_CR3] = (uint64_t)mkpml4();
@@ -194,4 +203,44 @@ PID_T spawn(void* rip, const char* path, PPERM_T permissions) {
 
 void proc_set_state(struct Process* root, PSTATE_T state) {
     root->state = state;
+}
+
+
+ERRNO_T psignal_send(PID_T to, uint32_t dword) {
+    struct Process* current = queue_base;
+    while (1) {
+        if (current->pid == to) {
+            // Found process with matching PID.
+            struct SignalQueue* sigq = &current->sigq;
+
+            mutex_acquire(&sigq->rwlock);
+            sigq->queue[sigq->next_index++] = (((uint64_t)current_task->pid << 32) | dword);
+            mutex_release(&sigq->rwlock);
+            semaphore_down(&sigq->qlock);
+            return EXIT_SUCCESS;
+        }
+
+        current = current->next;
+
+        if (current == queue_base) {
+            // We are back at the beginning, could not find process.
+            return -EXIT_FAILURE;
+        } 
+    }
+}
+
+
+uint64_t psignal_read(void) {
+    struct SignalQueue* sigq = &current_task->sigq;
+    
+    if (sigq->next_index == 0) {
+        return 0;
+    }
+
+    mutex_acquire(&sigq->rwlock);
+    uint64_t signal = sigq->queue[--sigq->next_index];
+    mutex_release(&sigq->rwlock);
+
+    semaphore_up(&sigq->qlock);
+    return PSIGNAL_TOP_BITS_UNTOUCHED(signal) ? signal : 0;
 }
