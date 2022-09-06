@@ -7,11 +7,12 @@
 #include <fs/initrd.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <mm/vmm.h>
 
 
 void start_init_system(void) {
     size_t unused;
-    char* start_code = elf_get_entry("initrd/init.sys", &unused);
+    char* start_code = elf_get_entry("initrd/init.sys", &unused, (uint64_t)vmm_get_vaddrsp());
 
     if (start_code == NULL) {
         kprintf(KERN_PANIC "init.sys not found!\n");
