@@ -13,6 +13,12 @@
     };
 
 
+#define SEMAPHORE_WRITE_INIT(max_n_cnt, sem)    \
+    sem.n = max_n_cnt;                          \
+    sem.max_n = max_n_cnt;                      \
+    sem.lock = 0;
+
+
 typedef struct {
     _Atomic size_t n;
     size_t max_n;
