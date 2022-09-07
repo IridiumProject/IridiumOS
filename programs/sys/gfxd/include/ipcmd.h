@@ -1,10 +1,7 @@
-#ifndef GFXD__SIGNAL__H
-#define GFXD__SIGNAL__H
+#ifndef GFXD__IPCMD__H
+#define GFXD__IPCMD__H
 
-// SHOULD BE < 255.
-typedef enum {
-    GFXDSIG_CLEAR_SCREEN = 0
-} IPCMD;
+#define GFXDSIG_CLEAR_SCREEN 0
 
 
 #endif
