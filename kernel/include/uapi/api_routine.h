@@ -13,7 +13,8 @@ typedef enum {
     UAPI_INVALID_SERVICE = 2,
     UAPI_PERMISSION_DENIED = 3,
     UAPI_CMDBURST_NOT_STARTED = 4,
-    UAPI_UNKNOWN_ERROR = 5,
+    UAPI_CMDBURST_CONTINUE = 5,             // If everything went OK and more commands are needed.
+    UAPI_UNKNOWN_ERROR = 6,
 } UAPI_STATUS_T;
 
 /*

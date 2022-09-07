@@ -3,6 +3,7 @@
 
 enum {
     SCREENUAPI_CLEARSCREEN = 0,
+    SCREENUAPI_PUTPIXEL = 1,
 };
 
 void screen_uapi_init(void);
