@@ -14,8 +14,7 @@ static inline uint64_t* read_cr3(void) {
     return (uint64_t*)(uint64_t)PHYS_TO_HIGHER_HALF_DATA(cr3_value);
 }
 
-static inline void invlpg(void* page_base)
-{
+static inline void invlpg(void* page_base) {
     asm volatile("invlpg (%0)" :: "r" (page_base));
 
 }
@@ -59,13 +58,12 @@ void vmm_map_page(PML4* pml4, uint64_t logical, uint32_t flags) {
     if (!(page_tbl[pt_idx] & PAGE_PRESENT)) {
         uint64_t phys_map = pmm_alloc();
         page_tbl[pt_idx] = (phys_map & PAGE_ADDR_MASK) | flags;
-        invlpg((void*)logical);
     } else {
         page_tbl[pt_idx] &= ~(0b111);
         page_tbl[pt_idx] |= flags;
-        invlpg((void*)logical);
     }
 
+    invlpg((void*)logical);
     mutex_release(&lock);
 }
 
@@ -85,18 +83,16 @@ void vmm_unmap_page(PML4* pml4, uint64_t logical) {
     uint64_t* pdpt = (uint64_t*)(pml4[PML4_IDX] & PAGE_ADDR_MASK);
     uint64_t* pdt = (uint64_t*)(pdpt[PDPT_IDX] & PAGE_ADDR_MASK);
     uint64_t* page_tbl = (uint64_t*)(pdt[PD_IDX] & PAGE_ADDR_MASK);
-    page_tbl[PT_IDX] = logical;
+    page_tbl[PT_IDX] &= ~(0b111);
     invlpg((void*)logical);
     mutex_release(&lock);
 }
 
-void* vmm_alloc_page(void)
-{
+void* vmm_alloc_page(void) {
     MUTEX_T lock = MUTEX_UNLOCKED;
     mutex_acquire(&lock);
     uint64_t frame = pmm_alloc();
-    if (frame == 0)
-    {
+    if (frame == 0) {
         return NULL;
     }
 
