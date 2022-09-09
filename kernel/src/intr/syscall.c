@@ -2,6 +2,7 @@
 #include <common/log.h>
 #include <common/elf.h>
 #include <common/asm.h>
+#include <common/errno.h>
 #include <uapi/sysreq.h>
 #include <proc/drvmaster.h>
 #include <proc/proc.h>
@@ -9,7 +10,7 @@
 #include <stdint.h>
 
 // Change SYSCALL_COUNT not g_SYSCALL_COUNT.
-#define SYSCALL_COUNT 6
+#define SYSCALL_COUNT 8
 const uint16_t g_SYSCALL_COUNT = SYSCALL_COUNT;
 
 struct SyscallRegs {
@@ -104,6 +105,43 @@ static void sys_read_psignal(void) {
     syscall_regs.rax = psignal_read();
 }
 
+/*
+ *  Requires PPERM_CONSOLE.
+ *  Outputs to the console.
+ *  RBX: String.
+ *  RCX: Single uint32_t arg.
+ *  RAX: Status.
+ */
+
+static void sys_con_out(void) {
+    extern struct Process* current_task;
+    if (!(current_task->perm_mask & PPERM_CONSOLE)) {
+        syscall_regs.rax = -EPERM;
+    } else {
+        kprintf((char*)syscall_regs.rbx, syscall_regs.rcx);
+        syscall_regs.rax = EXIT_SUCCESS;
+    }
+}
+
+// Exits current process.
+__attribute__((naked)) static void sys_exit(void) {
+    // We will not need the IRET stack frame as
+    // we are not returning to the process hence we pop
+    // it off the stack so it doesn't become useless junk.
+    __asm__ __volatile__(
+            "                       \
+            mov $5, %rcx;           \
+            .destory_stackframe:    \
+                pop %rax;           \
+                loop .destory_stackframe");
+
+    exit();
+
+    // We won't even reach here. This is just
+    // to show that it won't return.
+    while (1);
+}
+
 
 void(*syscall_table[SYSCALL_COUNT])(void) = {
     sys_hello,                          // 0x0.
@@ -112,4 +150,6 @@ void(*syscall_table[SYSCALL_COUNT])(void) = {
     sys_ird_spawn,                      // 0x3.
     sys_send_psignal,                   // 0x4.
     sys_read_psignal,                   // 0x5.
+    sys_con_out,                        // 0x6.
+    sys_exit,                           // 0x7.
 };
