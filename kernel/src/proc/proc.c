@@ -2,11 +2,14 @@
 #include <common/debug.h>
 #include <common/asm.h>
 #include <common/elf.h>
-#include <common/log.h>
+#include <common/string.h>
 #include <mm/kheap.h>
 #include <mm/vmm.h>
 
 #define STACK_SIZE 0x1000*3
+#define WAIT_SWITCH STI; while (1);
+#define SAFE_PTR_DEREF(ptr, value) \
+    if (ptr != NULL) { *ptr = value; }
 
 struct Process* queue_head = NULL;               // Top of queue.
 struct Process* queue_base = NULL;               // Base of queue.
@@ -20,7 +23,7 @@ static PID_T next_pid = 1;
 
 
 static void psignal_queue_init(struct SignalQueue* sigq) {
-    SEMAPHORE_WRITE_INIT(PSIGNAL_QUEUE_SIZE, sigq->qlock);
+    SEMAPHORE_WRITE_INIT(SEMAPHORE_REJECT, PSIGNAL_QUEUE_SIZE, sigq->qlock);
     sigq->rwlock = MUTEX_UNLOCKED;
     sigq->next_index = 0;
 }
@@ -54,21 +57,13 @@ __attribute__((naked)) void proc_init(void) {
     queue_base->context[PCTX_RAX] = 0;
     queue_base->context[PCTX_RIP] = ret_rip;
     queue_base->n_slave_driver_groups = 0;
-    queue_base->perm_mask = PPERM_PERM | PPERM_DRVCLAIM;
+    queue_base->perm_mask = PPERM_SUPER_ADMIN;
     psignal_queue_init(&queue_base->sigq);
 
     // Allocate a new address space.
     queue_base->context[PCTX_CR3] = (uint64_t)mkpml4();
     ASSERT(queue_base->context[PCTX_CR3] != 0);
     ASSERT(queue_base->perm_mask & PPERM_DRVCLAIM);
-
-    /*
-     *  Update vmm.c's "cur_pml4" variable.
-     *  We are doing this before making a new stack
-     *  because kmalloc() uses the cur_pml4 variable
-     *  for mapping the allocated memory.
-     */
-    // cur_pml4 = (PML4*)queue_base->context[PCTX_CR3];
 
     __asm__ __volatile__("mov %0, %%cr3" :: "r" (queue_base->context[PCTX_CR3]));
 
@@ -169,7 +164,6 @@ PID_T spawn(void* rip, const char* path, PPERM_T permissions) {
 
     // Setup vaddrsp.
     queue_head->context[PCTX_CR3] = (uint64_t)mkpml4();
-    // cur_pml4 = (PML4*)queue_head->context[PCTX_CR3];
 
     // Temporaily change address spaces.
     uint64_t old_cr3 = (uint64_t)vmm_get_vaddrsp();
@@ -179,10 +173,11 @@ PID_T spawn(void* rip, const char* path, PPERM_T permissions) {
         size_t unused;
         rip = elf_get_entry(path, &unused, queue_head->context[PCTX_CR3]);
     }
-
-    // Setup stack.
-    queue_head->context[PCTX_RSP] = (uint64_t)kmalloc_user(STACK_SIZE) + (STACK_SIZE - 10);
-    queue_head->context[PCTX_RBP] = queue_head->context[PCTX_RSP];
+        
+    // Setup stack. 
+    queue_head->context[PCTX_STACK_BASE] = (uint64_t)kmalloc_user(STACK_SIZE); 
+    queue_head->context[PCTX_RBP] = queue_head->context[PCTX_STACK_BASE] + (STACK_SIZE - 10);
+    queue_head->context[PCTX_RSP] = queue_head->context[PCTX_RBP];
     queue_head->context[PCTX_RIP] = (uint64_t)rip;
 
     // Setup IRET stack frame for this task.
@@ -200,6 +195,69 @@ PID_T spawn(void* rip, const char* path, PPERM_T permissions) {
     return queue_head->pid;
 }
 
+__attribute__((naked)) void kill(PID_T pid, ERRNO_T* errno_out) {
+    CLI;
+    if (pid == 1) {
+        SAFE_PTR_DEREF(errno_out, -EPERM);
+        return;
+    }
+
+    if (pid < 0 || pid > queue_head->pid) {
+        SAFE_PTR_DEREF(errno_out, -EXIT_FAILURE);
+        return;
+    }
+
+    // Locate task.
+    // TODO: Make faster.
+    static struct Process* current;
+    current = queue_base;
+    while (1) {
+        current = current->next;
+
+        // FIXME: FREE OR CLEAR AND REUSE PML4 ASAP.
+        if (current->pid == pid) {
+            PID_T running_pid = current_task->pid;      // PID of currently running process.
+
+            // Clear process from queue.
+            current_task = current->next;
+            current->prev->next = current->next;
+            current->next->prev = current->prev;
+
+            // Free stack.
+            kfree((void*)current->context[PCTX_STACK_BASE]);
+
+            // Free actual process structure.
+            kfree(current);
+
+            // Successful!
+            SAFE_PTR_DEREF(errno_out, EXIT_SUCCESS);
+
+            // It wait successful, wait until process switches if it was current PID
+            // that was killed.
+
+            if (running_pid == pid) {
+                STI;
+                WAIT_SWITCH;
+            }
+
+            // No the PID wasn't of the currently running task, continue.
+            STI;
+            return;
+        }
+
+        if (current == queue_base) {
+            // We are back at the beginning, could not find process.
+            SAFE_PTR_DEREF(errno_out, -EXIT_FAILURE);
+            return;
+        } 
+    }
+}
+
+
+void exit(void) {
+    kill(current_task->pid, NULL);
+}
+
 
 void proc_set_state(struct Process* root, PSTATE_T state) {
     root->state = state;
@@ -213,10 +271,10 @@ ERRNO_T psignal_send(PID_T to, uint32_t dword) {
             // Found process with matching PID.
             struct SignalQueue* sigq = &current->sigq;
 
+            REJ_SEMAPHORE_DOWN(&sigq->qlock);
             mutex_acquire(&sigq->rwlock);
             sigq->queue[sigq->next_index++] = (((uint64_t)current_task->pid << 32) | dword);
             mutex_release(&sigq->rwlock);
-            semaphore_down(&sigq->qlock);
             return EXIT_SUCCESS;
         }
 

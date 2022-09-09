@@ -10,7 +10,7 @@
 #include <sync/semaphore.h>
 #include <sync/mutex.h>
 
-#define PCONTEXT_SIZE 8
+#define PCONTEXT_SIZE 9
 #define PSIGNAL_QUEUE_SIZE 3
 
 // If changing any of these typedefs, update 
@@ -51,6 +51,7 @@ typedef enum {
     PCTX_RAX = 5,
     PCTX_RIP = 6,
     PCTX_CR3 = 7,
+    PCTX_STACK_BASE = 8
 } PCONTEXT_INDEX;
 
 struct Process {
@@ -83,6 +84,12 @@ ERRNO_T perm_revoke(PID_T pid, PPERM_T perms);
 // To use initrd path, set @param rip to NULL and set @path to initrd path.
 // This assumes you have checked that the path exists.
 PID_T spawn(void* rip, const char* path, PPERM_T permissions);
+
+// Exits the current process.
+void exit(void);
+
+// Kills a process.
+__attribute__((naked)) void kill(PID_T pid, ERRNO_T* errno_out);
 
 // Signal stuff.
 ERRNO_T psignal_send(PID_T to, uint32_t dword);
