@@ -2,6 +2,7 @@
 #include <mm/vmm.h>
 #include <arch/mem.h>
 #include <common/debug.h>
+#include <common/log.h>
 #include <common/asm.h>
 #include <stdint.h>
 
@@ -129,16 +130,13 @@ void kfree(void* block) {
         status |= KHEAP_INVALID_FREE;
         return;
     }
+    
+    uint64_t stop_addr = (uint64_t)(block + (sizeof(struct KHeapBlock) + region->size));
+    struct KHeapBlock* cur_block = region;
 
-    void* stop_addr = region - region->size;
-    while (region != NULL && (uint64_t)region > (uint64_t)stop_addr) {
-        ASSERT((uint64_t)(region) >= HEAP_START_ADDR);      // Ensure nothing funky happens.
-        region->is_free = 1;
-
-        // uint64_t unmap_addr = (uint64_t)DATA_START(region);
-        uint64_t unmap_addr = (uint64_t)region;
-        region = region->prev;
-        vmm_unmap_page(vmm_get_vaddrsp(), unmap_addr);
+    while (cur_block != NULL && (uint64_t)cur_block < stop_addr) {
+        vmm_unmap_page(vmm_get_vaddrsp(), (uint64_t)cur_block);
+        cur_block += 0x1000;
     }
 
     status = 0;       // Everything went well, status should be zero :)
