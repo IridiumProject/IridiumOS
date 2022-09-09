@@ -27,3 +27,13 @@ _syscallab ERRNO_T psignal_send(PID_T dest, uint32_t payload) {
             int $0x80;       \
             retq" :: "m" (dest), "m" (payload));
 }
+
+
+_syscallab void exit(void) {
+    __asm__ __volatile__(
+            "\
+            mov $0x7, %rax; \
+            int $0x80");
+
+    while (1);
+}

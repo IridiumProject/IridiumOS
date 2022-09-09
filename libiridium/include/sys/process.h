@@ -20,5 +20,6 @@ typedef uint64_t PSIGNAL_T;
 PID_T get_top_pid(void);
 _syscallab PSIGNAL_T psignal_fetch(void);
 _syscallab ERRNO_T psignal_send(PID_T dest, uint32_t payload);
+_syscallab void exit(void);
 
 #endif
