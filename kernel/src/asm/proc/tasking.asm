@@ -51,17 +51,17 @@ switch_task:
     
     ;; Set state as READY.
     mov rdi, [current_task]
-    mov rsi, 2                          ;; 2 = PROC_READY.
+    mov rsi, 2                          ;; 2 = PSTATE_READY.
     call proc_set_state
 
     ;; Get next task.
     mov rdi, [current_task]
     call proc_get_next
-    mov [current_task], rax 
+    mov [current_task], rax
     
     ;; Set state as RUNNING.
     mov rdi, [current_task]
-    mov rsi, 1                          ;; 1 = PROC_RUNNING.
+    mov rsi, 1                          ;; 1 = PSTATE_RUNNING.
     call proc_set_state
 
     ;; Get context.
