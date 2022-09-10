@@ -57,10 +57,12 @@ typedef enum {
 struct Process {
     PID_T pid;                                                  // Process identifier.
     PSTATE_T state;                                             // Process state.
+    uint32_t n_sleep_ticks;                                     // A counter to unblock task once it hits 0.
     PPERM_T perm_mask;                                          // Premission bitmask.
     uint64_t context[PCONTEXT_SIZE];                            // Context (registers and address space).
     uint16_t n_slave_driver_groups;                             // The amount of driver groups this process owns.
     DRIVER_TYPE_T slave_driver_groups[DRVMASTER_MAX_SLAVES];    // Driver group this process owns (used by daemons, if not used: DRIVERTYPE_NONE).
+    uint8_t uses_console : 1;
     struct SignalQueue sigq;                                    // Signal queue.
     struct Process* prev;                                       // Pointer to process on the prev.
     struct Process* next;                                       // Pointer to process on the next.
@@ -79,14 +81,17 @@ ERRNO_T perm_revoke(PID_T pid, PPERM_T perms);
 
 
 // Process creation/deletion.
-
-// Returns < 0 as error code if something goes wrong.
-// To use initrd path, set @param rip to NULL and set @path to initrd path.
-// This assumes you have checked that the path exists.
-PID_T spawn(void* rip, const char* path, PPERM_T permissions);
+// May be replaced in later versions.
+// @param uses_console is 1 if the process was spawned by a console and
+// if the console should be used for programs error output.
+PID_T _initrd_spawn(const char* path, PPERM_T permissions, uint8_t uses_console);
 
 // Exits the current process.
-void exit(void);
+__attribute__((noreturn)) void exit(void);
+
+// For internal kernel usage if a task does something it's 
+// not supposed to and causes a fault.
+__attribute__((noreturn)) void handle_exception(uint8_t vector, uint64_t rip, uint64_t errcode);
 
 // Kills a process.
 __attribute__((naked)) void kill(PID_T pid, ERRNO_T* errno_out);
