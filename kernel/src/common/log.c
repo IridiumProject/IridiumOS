@@ -46,6 +46,11 @@ void kprintf(char* fmt, ...)
                 case 'x':
                 	puts(hex2str(va_arg(ap, uint64_t)));
                 	break;
+                case 'c':
+                    {
+                        puts((char[2]){va_arg(ap, unsigned int), 0});
+                        break;
+                    }
             }
         } else {
             char terminated[2] = {*ptr, 0};
