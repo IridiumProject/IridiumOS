@@ -21,6 +21,19 @@
 
 #define PPERM_CONSOLE   (1 << 2)
 
-#define PPERM_ADMIN     PPERM_CONSOLE           // Gives more permissions that a process usually lacks (Careful!).
-#define PPERM_SUPER_ADMIN     PPERM_CONSOLE | PPERM_DRVCLAIM | PPERM_PERM         // Gives all permissions (CAREFUL!!!!).
+
+/*
+ *  Allows reading initrd.
+ *
+ *  MAY BE DEPERECATED IN NEAR FUTURE!
+ *
+ */
+
+#define PPERM_INITRD    (1 << 3)
+
+// Gives more permissions that a process usually lacks (Careful!).
+#define PPERM_ADMIN           PPERM_CONSOLE
+
+// Gives all permissions (CAREFUL!!!!).
+#define PPERM_SUPER_ADMIN     PPERM_CONSOLE | PPERM_DRVCLAIM | PPERM_PERM | PPERM_INITRD
 #endif
