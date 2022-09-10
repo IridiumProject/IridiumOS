@@ -67,13 +67,22 @@ static void sys_claimdrv(void) {
  *
  *  RBX: Filename.
  *  RCX: If calling task does not have PPERM_PERM leave RCX 0, otherwise permissions if needed.
+ *  RDX: 1 if console should be used for error output, otherwise 0.
  *  Returned in RAX: if value is >= 1 it is the PID otherwise if < 0 it is an error code.
  *
  */
 
 static void sys_ird_spawn(void) {
+    extern struct Process* current_task;
+    
+    if (!(current_task->perm_mask & PPERM_INITRD)) {
+        syscall_regs.rax = -EPERM;
+        return;
+    }
+
     // TODO: Error checking ASAP.
-    syscall_regs.rax = spawn(NULL, (const char*)syscall_regs.rbx, syscall_regs.rcx);
+    // syscall_regs.rax = spawn(NULL, (const char*)syscall_regs.rbx, syscall_regs.rcx, NULL);
+    syscall_regs.rax = _initrd_spawn((const char*)syscall_regs.rbx, syscall_regs.rcx, syscall_regs.rdx);
 }
 
 
@@ -131,9 +140,9 @@ __attribute__((naked)) static void sys_exit(void) {
     __asm__ __volatile__(
             "                       \
             mov $5, %rcx;           \
-            .destory_stackframe:    \
+            .sys_exit_iret_pop:     \
                 pop %rax;           \
-                loop .destory_stackframe");
+                loop .sys_exit_iret_pop");
 
     exit();
 
