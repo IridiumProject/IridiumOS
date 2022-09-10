@@ -11,6 +11,5 @@
 							 // STI is called before the end of pit_sleep()
 
 void pit_init(void);
-void pit_sleep(uint16_t n_ticks);
 
 #endif
