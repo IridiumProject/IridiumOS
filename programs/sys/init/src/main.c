@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <service.h>
 #include <sys/console.h>
+#include <sys/process.h>
+
 
 void main(void) {
     con_out_u32(CONSOLE_CLEAR, 0);
