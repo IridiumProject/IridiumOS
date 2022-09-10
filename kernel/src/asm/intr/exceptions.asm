@@ -2,6 +2,7 @@ bits 64
 
 extern kprintf
 extern print_panic_msg
+extern handle_exception
 
 
 global divide_error
@@ -26,21 +27,31 @@ global page_fault
     hlt
 %endmacro
 
+%macro program_panic 1
+    mov rdi, %1
+    pop rsi
+    call handle_exception
+%endmacro
+
 section .text
 divide_error:
-    kpanic 0x0
+    xor rdx, rdx                ;; NO ERROR CODE.
+    program_panic 0x0
 
 debug_exception:
-    kpanic 0x1
+    xor rdx, rdx                ;; NO ERROR CODE.
+    program_panic 0x1
 
 overflow:
     kpanic 0x4
 
 bound_range_exceeded:
-    kpanic 0x5
+    xor rdx, rdx                ;; NO ERROR CODE.
+    program_panic 0x5
 
 invalid_opcode:
-    kpanic 0x6
+    xor rdx, rdx                ;; NO ERROR CODE.
+    program_panic 0x6
 
 no_mathcoprocessor:
     kpanic 0x7
@@ -49,7 +60,8 @@ double_fault:
     kpanic 0x8
 
 invalid_tss:
-    kpanic 0xA
+    pop rdx                 ;; ERROR CODE.
+    program_panic 0xA
 
 segment_not_present:
     kpanic 0xB
@@ -58,10 +70,12 @@ stack_segment_fault:
     kpanic 0xC
 
 general_protection_fault:
-    kpanic 0xD
+    pop rdx                 ;; ERROR CODE.
+    program_panic 0xD
 
 page_fault:
-    kpanic 0xE
+    pop rdx                 ;; ERROR CODE.
+    program_panic 0xE
 
 
 section .data
