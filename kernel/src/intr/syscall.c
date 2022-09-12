@@ -3,6 +3,7 @@
 #include <common/elf.h>
 #include <common/asm.h>
 #include <common/errno.h>
+#include <common/font.h>
 #include <uapi/sysreq.h>
 #include <proc/drvmaster.h>
 #include <proc/proc.h>
@@ -10,7 +11,7 @@
 #include <stdint.h>
 
 // Change SYSCALL_COUNT not g_SYSCALL_COUNT.
-#define SYSCALL_COUNT 8
+#define SYSCALL_COUNT 9
 const uint16_t g_SYSCALL_COUNT = SYSCALL_COUNT;
 
 struct SyscallRegs {
@@ -27,7 +28,7 @@ struct SyscallRegs {
 
 
 static void sys_hello(void) {
-    kprintf(KINFO "SYS_HELLO: Hello! I see you pressed a key!\n");
+    kprintf(KINFO "SYS_HELLO: Hello!\n");
 }
 
 /*
@@ -118,8 +119,8 @@ static void sys_read_psignal(void) {
  *  Requires PPERM_CONSOLE.
  *  Outputs to the console.
  *  RBX: String.
- *  RCX: Single uint32_t arg.
- *  RAX: Status.
+ *  RCX: Color.
+ *  Returned in RAX: Status.
  */
 
 static void sys_con_out(void) {
@@ -127,28 +128,32 @@ static void sys_con_out(void) {
     if (!(current_task->perm_mask & PPERM_CONSOLE)) {
         syscall_regs.rax = -EPERM;
     } else {
-        kprintf((char*)syscall_regs.rbx, syscall_regs.rcx);
+        write_string((const char*)syscall_regs.rbx, syscall_regs.rcx);
         syscall_regs.rax = EXIT_SUCCESS;
     }
 }
 
 // Exits current process.
 __attribute__((naked)) static void sys_exit(void) {
-    // We will not need the IRET stack frame as
-    // we are not returning to the process hence we pop
-    // it off the stack so it doesn't become useless junk.
-    __asm__ __volatile__(
-            "                       \
-            mov $5, %rcx;           \
-            .sys_exit_iret_pop:     \
-                pop %rax;           \
-                loop .sys_exit_iret_pop");
-
     exit();
 
     // We won't even reach here. This is just
     // to show that it won't return.
     while (1);
+}
+
+/*
+ *  Process signal hook.
+ *  Causes the function pointer selected to hook
+ *  to be called when a signal is sent to the process.
+ *
+ *  RBX: Function ptr.
+ *
+ */
+
+static void sys_psignal_hook(void) {
+    extern struct Process* current_task;
+    current_task->sigq.signal_callback = (void*)syscall_regs.rbx;
 }
 
 
@@ -161,4 +166,5 @@ void(*syscall_table[SYSCALL_COUNT])(void) = {
     sys_read_psignal,                   // 0x5.
     sys_con_out,                        // 0x6.
     sys_exit,                           // 0x7.
+    sys_psignal_hook,                   // 0x8.
 };
