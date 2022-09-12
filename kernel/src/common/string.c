@@ -1,16 +1,14 @@
 #include <common/string.h>
 #include <common/log.h>
 
-size_t strlen(const char* str)
-{
+size_t strlen(const char* str) {
     size_t i = 0;
     while (str[i++]);
     return i - 1;
 }
 
 
-bool memcmp(const char* str1, const char* str2, size_t n)
-{
+bool memcmp(const char* str1, const char* str2, size_t n) {
     while (*str1 && *str2) {
         if (*str1 != *str2) {
             return false;
@@ -55,7 +53,11 @@ char* dec2str(int number) {
 }
 
 
-
+void memcpy(uint8_t* dst, const uint8_t* src, size_t len) {
+    for (size_t i = 0; i < len; ++i) {
+        dst[i] = src[i];
+    }
+}
 
 
 
@@ -111,12 +113,10 @@ uint8_t* strncpy(uint8_t *dst, const uint8_t *src, const uint8_t len) {
 }
 
 
-void memzero(void* ptr, size_t n)
-{
+void memzero(void* ptr, size_t n) {
 	char* ptr_ch = ptr;
 
-	for (size_t i = 0; i < n; ++i)
-	{
+	for (size_t i = 0; i < n; ++i) {
         // kprintf("A, %d\n", i);
 		ptr_ch[i] = 0;
 	}
@@ -126,28 +126,23 @@ void memzero(void* ptr, size_t n)
 void memset(void* ptr, uint64_t data, size_t n) {
     char* ptr_ch = ptr;
 
-	for (size_t i = 0; i < n; ++i)
-	{
+	for (size_t i = 0; i < n; ++i) {
 		ptr_ch[i] = data;
 	}
 }
 
 
-uint8_t strcmp(const char* str1, const char* str2)
-{
+uint8_t strcmp(const char* str1, const char* str2) {
     uint32_t str1_len, str2_len;
     str1_len = strlen(str1);
     str2_len = strlen(str2);
 
-    if (str1_len != str2_len)
-    {
+    if (str1_len != str2_len) {
         return 1;
     }
 
-    for (uint32_t i = 0; i < str1_len; ++i)
-    {
-        if (str1[i] != str2[i])
-        {
+    for (uint32_t i = 0; i < str1_len; ++i) {
+        if (str1[i] != str2[i]) {
             return 1;
         }
     }
@@ -156,12 +151,9 @@ uint8_t strcmp(const char* str1, const char* str2)
 }
 
 
-uint8_t strncmp(const char* str1, const char* str2, size_t n)
-{
-    for (uint32_t i = 0; i < n; ++i)
-    {
-        if (str1[i] != str2[i])
-        {
+uint8_t strncmp(const char* str1, const char* str2, size_t n) {
+    for (uint32_t i = 0; i < n; ++i) {
+        if (str1[i] != str2[i]) {
             return 1;
         }
     }
