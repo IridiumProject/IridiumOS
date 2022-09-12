@@ -5,6 +5,5 @@
 
 
 void main(void) {
-    con_out_u32(CONSOLE_CYAN "Shell coming soon!", 0); 
     exit();
 }
