@@ -1,5 +1,7 @@
 bits 64
 global switch_task
+global taskjmp_userland
+global fetch_rip
 
 extern current_task
 extern proc_get_next
@@ -22,8 +24,6 @@ extern proc_set_state
     add r11, 8*%2
     mov [r11], %3
 %endmacro
-
-
 
 switch_task:
     ;; RAX saved in tmpbuf.
@@ -97,6 +97,31 @@ switch_task:
     mov r10, [tmpbuf1]
     mov [rsp], r10
     iretq
+
+
+;; Returns to a ring 3 task.
+;; RDI: Task RSP from task context.
+;; ONLY CALL LIKE SO:
+;; taskjmp_userland(task->context[PCTX_RSP])
+taskjmp_userland:
+    cli
+    mov rax, rdi
+    mov rdi, [rdi]
+    mov [tmpbuf1], rdi
+    push 0x40 | 3               ;; SS.
+    push rax                    ;; RSP.
+    pushf                       ;; RFLAGS.
+    mov rax, [rsp]
+    or rax, 1 << 9
+    mov [rsp], rax
+    push 0x38 | 3               ;; CS.
+    push qword [tmpbuf1]        ;; RIP.
+    iretq
+
+
+fetch_rip:
+    pop rax
+    jmp rax
 
 section .data
 tmpbuf: dq 0
