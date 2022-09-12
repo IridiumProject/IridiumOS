@@ -4,6 +4,7 @@
 #include <common/debug.h>
 #include <common/log.h>
 #include <common/asm.h>
+#include <common/string.h>
 #include <stdint.h>
 
 #define KHEAP_MAG 0xCA75C001
@@ -102,6 +103,14 @@ void* kmalloc(size_t n_bytes) {
 }
 
 
+void* krealloc(void* old, size_t n_bytes) {
+    char* new = kmalloc(n_bytes);
+    memcpy(new, old, n_bytes);
+    kfree(old);
+    return new;
+}
+
+
 KHEAP_STATUS_T kheap_status(void) {
     return status;
 }
@@ -131,15 +140,15 @@ void kfree(void* block) {
         return;
     }
     
-    uint64_t stop_addr = (uint64_t)(block + (sizeof(struct KHeapBlock) + region->size));
+    uint64_t stop_addr = (uint64_t)(block - region->size);
     struct KHeapBlock* cur_block = region;
 
-    while (cur_block != NULL && (uint64_t)cur_block < stop_addr) {
-        vmm_unmap_page(vmm_get_vaddrsp(), (uint64_t)cur_block);
-        cur_block += 0x1000;
+    while (cur_block != NULL && block != DATA_START(cur_block)) {
+        cur_block->is_free = 1;
+        cur_block = cur_block->next;
     }
 
-    status = 0;       // Everything went well, status should be zero :)
+    status = 0;       // Everything went well, status should be zero :) 
 }
 
 
