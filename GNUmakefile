@@ -20,7 +20,7 @@ run2: Iridium.iso
 
 .PHONY: debug
 run: Iridium.iso
-	qemu-system-$(ARCH) -M q35 -m 2G -drive file=Iridium.iso -boot d -monitor stdio -serial telnet:localhost:4321,server,nowait -smp 2
+	qemu-system-$(ARCH) -M q35 -m 3G -drive file=Iridium.iso -boot d -monitor stdio -serial telnet:localhost:4321,server,nowait -smp 2
 
 .PHONY: debug
 debug: Iridium.iso
