@@ -47,7 +47,7 @@ uint64_t pmm_alloc(void) {
 }
 
 
-void vmm_free(uint64_t base) {
+void pmm_free(uint64_t base) {
     MUTEX_T lock = MUTEX_UNLOCKED;
     mutex_acquire(&lock);
     for (uint32_t i = 0; i < bitmap_length; ++i) {

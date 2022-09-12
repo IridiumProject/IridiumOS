@@ -19,6 +19,6 @@ uint64_t pmm_alloc(void);
  *
  */
 
-void vmm_free(uint64_t base);
+void pmm_free(uint64_t base);
 
 #endif
