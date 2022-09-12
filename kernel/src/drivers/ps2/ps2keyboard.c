@@ -1,6 +1,7 @@
 #include <drivers/ps2/keyboard.h>
 #include <arch/io.h>
 #include <arch/x86/lapic.h>
+#include <proc/proc.h>
 
 
 /*
@@ -30,10 +31,19 @@ void __attribute__((interrupt)) irq1_isr(void* stack_frame) {
                 (SC_ASCII[scancode] >= '!' && SC_ASCII[scancode] <= '.') || 
                 (SC_ASCII[scancode] >= '[' && SC_ASCII[scancode] <= '`')) {
             pressed = 1;
+
+            // TODO: USE KEYPORT ABSTRACTION LATER AND REMOVE THIS! 
+            if (last_keystroke == 0) {
+                last_keystroke = (pressed << 24 | character << 16 | scancode);
+                ERRNO_T e = psignal_send(1, 0x9961A7A);
+                if (e == -EBUSY) {
+                    last_keystroke = 0;
+                }
+            }
         }
     }
 
-    last_keystroke = (pressed << 24 | character << 16 | scancode);
+    // Send EOI.
     lapic_send_eoi();
 }
 
