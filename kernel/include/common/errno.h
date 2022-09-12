@@ -10,6 +10,7 @@ enum {
     EPERM,                  // Permission denied.
     ENOMEM,                 // Out of memory.
     ENOENT,                 // File or directory does not exist.
+    EBUSY,                  // Resource is busy.
     EREJECTED,              // Request rejected.
     EDRVCLAIMED,            // Daemons can get this error if a double claim occurs.
 };
