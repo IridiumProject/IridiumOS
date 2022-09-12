@@ -4,6 +4,7 @@
 #include <common/log.h>
 #include <common/asm.h>
 #include <common/init.h>
+#include <common/font.h>
 #include <intr/intr.h>
 #include <mm/pmm.h>
 #include <mm/vmm.h>
@@ -20,6 +21,7 @@
 #include <uapi/input/keyboard.h>
 #include <uapi/video/screen.h>
 #include <uapi/proc/info.h>
+#include <drivers/video/lfb.h>
 
 
 static void uapi_init(void) {
@@ -39,7 +41,7 @@ static void __attribute__((noreturn)) init(void) {
     acpi_init();
     kprintf(STATUS_MSG_COLOR "[ACPI]:" STATUS_MSG_OK_COLOR " OK\n");
     ioapic_init();
-    kprintf(STATUS_MSG_COLOR "[I/O APIC]:" STATUS_MSG_OK_COLOR " OK\n");
+    kprintf(STATUS_MSG_COLOR "[I/O APIC]:" STATUS_MSG_OK_COLOR " OK\n"); 
     lapic_init();
     kprintf(STATUS_MSG_COLOR "[Local APIC]:" STATUS_MSG_OK_COLOR " OK\n");
     pit_init();
@@ -58,9 +60,15 @@ static void __attribute__((noreturn)) init(void) {
     write_tss();
     load_tss();
     kprintf(STATUS_MSG_COLOR "[TSS]:" STATUS_MSG_OK_COLOR " OK\n");
-
+   
     kprintf(STATUS_MSG_COLOR "[SYSTEM]:" YELLOW " Starting PCI dump (will be truncated).\n\n");
     pci_dump();
+    
+    // Ensure the built in font is loaded.
+    init_font();
+
+    // Clear screen.
+    lfb_clear_screen(0x000000);
     
     uapi_init();
     start_init_system();
