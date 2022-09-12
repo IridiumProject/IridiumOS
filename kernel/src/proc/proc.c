@@ -7,6 +7,7 @@
 #include <common/panic.h>
 #include <mm/kheap.h>
 #include <mm/vmm.h>
+#include <mm/pmm.h>
 
 #define STACK_SIZE 0x1000*3
 #define WAIT_SWITCH STI; while (1);
@@ -16,17 +17,35 @@
 struct Process* queue_head = NULL;               // Top of queue.
 struct Process* queue_base = NULL;               // Base of queue.
 struct Process* current_task = NULL;             // Currently running task.
-
-extern PML4* cur_pml4;
+struct Process* last_zombie = NULL;
 
 static uint64_t ret_rip;
 static PID_T next_pid = 1;
 
 
+// tasking.asm
+void taskjmp_userland(uint64_t task_rsp);
+
 static void psignal_queue_init(struct SignalQueue* sigq) {
-    SEMAPHORE_WRITE_INIT(SEMAPHORE_REJECT, PSIGNAL_QUEUE_SIZE, sigq->qlock);
     sigq->rwlock = MUTEX_UNLOCKED;
     sigq->next_index = 0;
+    sigq->signal_callback = NULL;
+}
+
+
+static struct Process* locate_proc(PID_T pid) {
+    struct Process* p = queue_base;
+    while (1) {
+        if (p->pid == pid) {
+            return p;
+        }
+
+        p = p->next;
+
+        if (p == queue_base) {
+            return NULL;
+        }
+    }
 }
 
 
@@ -36,8 +55,8 @@ static void psignal_queue_init(struct SignalQueue* sigq) {
  *
  */
 
-static ERRNO_T _spawn(void* rip, const char* path, PPERM_T permissions) {
-    CLI; 
+static ERRNO_T _spawn(void* rip, const char* path, PPERM_T permissions, uint8_t uses_console) {
+    CLI;
 
     if (permissions != 0 && !(current_task->perm_mask & PPERM_PERM)) {
         return -EPERM;
@@ -53,6 +72,9 @@ static ERRNO_T _spawn(void* rip, const char* path, PPERM_T permissions) {
     queue_head->next = queue_base;
     queue_head->prev = prev;
     queue_head->n_sleep_ticks = 0;
+    queue_head->flags = 0;
+    queue_head->parent = NULL;
+    queue_head->uses_console = uses_console;
     psignal_queue_init(&queue_head->sigq);
 
     // Setup vaddrsp.
@@ -89,6 +111,37 @@ static ERRNO_T _spawn(void* rip, const char* path, PPERM_T permissions) {
     return EXIT_SUCCESS;
 }
 
+
+static void psignal_exec_callback(struct SignalQueue* sigq, struct Process* to) {
+    /*
+     *  Check if signal callback is not NULL and
+     *  if a signal is not being handled already.
+     */
+
+    if (sigq->signal_callback != NULL) {
+        // 1 because signal is being handled.
+        _spawn(sigq->signal_callback, NULL, 0, 1);
+        queue_head->perm_mask = to->perm_mask;
+        queue_head->context[PCTX_CR3] = to->context[PCTX_CR3]; 
+        queue_head->parent = to;
+        queue_head->sigq = to->sigq; 
+
+        // Ensure the prev process's next is queue_head.
+        struct Process* prev = locate_proc(queue_head->pid - 1);
+        ASSERT(prev != NULL);
+        prev->next = queue_head;
+        /*
+         *  This process was spawned to handle a signal.
+         *  Hence why we use this flag.
+         *
+         *  When killed, The parent's rwlock will be released.
+         *
+         */
+                
+        queue_head->flags = PFLAG_SIGNAL_HANDLER;
+    }
+}
+
 __attribute__((naked)) void proc_init(void) {
     // Ensure this function isn't called twice.
     ASSERT(queue_head == NULL);
@@ -119,6 +172,9 @@ __attribute__((naked)) void proc_init(void) {
     queue_base->n_slave_driver_groups = 0;
     queue_base->perm_mask = PPERM_SUPER_ADMIN;
     queue_base->n_sleep_ticks = 0;
+    queue_base->uses_console = 1;
+    queue_base->flags = 0;
+    queue_base->parent = NULL;
     psignal_queue_init(&queue_base->sigq);
 
     // Allocate a new address space.
@@ -146,7 +202,7 @@ __attribute__((naked)) void proc_init(void) {
 
 
 // Assembly helpers for proc.asm
-struct Process* proc_get_next(struct Process* root) { 
+struct Process* proc_get_next(struct Process* root) {   
     return root->next;
 }
 
@@ -206,76 +262,93 @@ ERRNO_T perm_revoke(PID_T pid, PPERM_T perms) {
 
 
 PID_T _initrd_spawn(const char* path, PPERM_T permissions, uint8_t uses_console) {
-    ERRNO_T errno = _spawn(NULL, path, permissions);
+    ERRNO_T errno = _spawn(NULL, path, permissions, uses_console);
 
     if (errno < 0) {
         return errno;
     }
     
-    queue_head->uses_console = uses_console;
     return queue_head->pid;
 }
 
-__attribute__((naked)) void kill(PID_T pid, ERRNO_T* errno_out) {
+
+__attribute__((noreturn)) void kill(PID_T pid, ERRNO_T* errno_out) {
     CLI;
+
+    /*
+     *  We must do some checking to ensure
+     *  we are putting a correct PID.
+     */
     if (pid == 1) {
         SAFE_PTR_DEREF(errno_out, -EPERM);
-        return;
+        taskjmp_userland(current_task->context[PCTX_RSP]);
     }
+
 
     if (pid < 0 || pid > queue_head->pid) {
+        SAFE_PTR_DEREF(errno_out, -EXIT_FAILURE); 
+        taskjmp_userland(current_task->context[PCTX_RSP]);
+    }
+
+    struct Process* current = locate_proc(pid);
+    if (current == NULL) {
         SAFE_PTR_DEREF(errno_out, -EXIT_FAILURE);
-        return;
+        taskjmp_userland(current_task->context[PCTX_RSP]);
     }
 
-    // Locate task.
-    // TODO: Make faster.
-    static struct Process* current;
-    current = queue_base;
-    while (1) {
-        current = current->next;
+    PID_T running_pid = current_task->pid;      // PID of currently running process. 
 
-        // FIXME: FREE OR CLEAR AND REUSE PML4 ASAP.
-        if (current->pid == pid) {
-            PID_T running_pid = current_task->pid;      // PID of currently running process.
-
-            // Clear process from queue.
-            current_task = current->next;
-            current->prev->next = current->next;
-            current->next->prev = current->prev;
-
-            // Free stack.
-            kfree((void*)current->context[PCTX_STACK_BASE]);
-
-            // Free actual process structure.
-            kfree(current);
-
-            // Successful!
-            SAFE_PTR_DEREF(errno_out, EXIT_SUCCESS);
-
-            // It wait successful, wait until process switches if it was current PID
-            // that was killed.
-
-            if (running_pid == pid) {
-                STI;
-                WAIT_SWITCH;
-            }
-
-            // No the PID wasn't of the currently running task, continue.
-            STI;
-            return;
-        }
-
-        if (current == queue_base) {
-            // We are back at the beginning, could not find process.
-            SAFE_PTR_DEREF(errno_out, -EXIT_FAILURE);
-            return;
-        } 
+    if (queue_head->pid == pid) {
+        --next_pid;
     }
+                
+    /*
+     *  Once we find the process we must do
+     *  the following:
+     *
+     *  - Free the stack allocated for it.
+     *  - Free it's address space.
+     *  - Remove it from the process queue.
+     *  - Return to next process.
+     *  
+     */
+            
+    // Free stack.
+    kfree((void*)current->context[PCTX_STACK_BASE]); 
+
+    // Free address space.
+    pmm_free(current->context[PCTX_CR3]);
+
+    // Remove from queue.
+    struct Process* prev = locate_proc(pid - 1);
+    struct Process* next = locate_proc(pid + 1);
+    prev->next = next != NULL ? next : queue_base;
+
+    // Free actual process structure.
+    kfree(current);
+
+    // Successful!
+    SAFE_PTR_DEREF(errno_out, EXIT_SUCCESS); 
+
+    // Ensure the it is indeed destroyed (for debugging).
+    ASSERT(locate_proc(pid) == NULL);
+    /*
+    if (running_pid == pid) {
+        current_task = queue_base;
+        taskjmp_userland(current_task->context[PCTX_RSP]);
+    } else {
+        taskjmp_userland(current_task->context[PCTX_RSP]);
+    }
+    */
+
+    current_task = queue_base;
+    STI;
+    while (1);
 }
 
 
 __attribute__((noreturn)) void exit(void) {
+    CLI;
     kill(current_task->pid, NULL);
     while (1);
 }
@@ -285,36 +358,46 @@ __attribute__((noreturn)) void exit(void) {
     kprintf("Last instruction pointer before fault: %x\n", rip);                \
     kprintf("PID of process that caused the fault: %d\n", current_task->pid);   \
 
+#define CHECK_CONSOLE_USAGE \
+    if (!(current_task->uses_console)) break;
+
 
 __attribute__((noreturn)) void handle_exception(uint8_t vector, uint64_t rip, uint64_t errcode) {
     CLI;
 
     switch (vector) {
         case 0x0:
+            CHECK_CONSOLE_USAGE;
             kprintf(PPANIC_NOCLEAR "Division error\n");
             EXCEPTION_PROCINFO;
             break;
         case 0x1:
+            CHECK_CONSOLE_USAGE;
             kprintf(PPANIC_NOCLEAR "Debug exception\n");
             EXCEPTION_PROCINFO;
             break;
         case 0x5:
+            CHECK_CONSOLE_USAGE;
             kprintf(PPANIC_NOCLEAR "Bound range exceeded\n");
             EXCEPTION_PROCINFO;
             break;
         case 0x6:
+            CHECK_CONSOLE_USAGE;
             kprintf(PPANIC_NOCLEAR "Invalid opcode\n");
             EXCEPTION_PROCINFO;
             break;
         case 0xA:
+            CHECK_CONSOLE_USAGE;
             kprintf(PPANIC_NOCLEAR "Segment error\n");
             EXCEPTION_PROCINFO;
             break;
         case 0xD:
+            CHECK_CONSOLE_USAGE;
             kprintf(PPANIC_NOCLEAR "Privilege violation\n");
             EXCEPTION_PROCINFO;
             break;
         case 0xE:
+            CHECK_CONSOLE_USAGE;
             uint64_t cr2;
             __asm__ __volatile__("mov %%cr2, %0" : "=r" (cr2));
             kprintf(PPANIC_NOCLEAR "Memory access violation\n");
@@ -344,17 +427,24 @@ void proc_set_state(struct Process* root, PSTATE_T state) {
 }
 
 
-ERRNO_T psignal_send(PID_T to, uint32_t dword) {
+ERRNO_T psignal_send(PID_T to, uint32_t dword) { 
     struct Process* current = queue_base;
+
     while (1) {
-        if (current->pid == to) {
+        if (current->pid == to) { 
             // Found process with matching PID.
             struct SignalQueue* sigq = &current->sigq;
+            if (sigq->next_index >= PSIGNAL_QUEUE_SIZE) {
+                return -EREJECTED;
+            }
+            
+            if (sigq->rwlock == 1) {
+                return -EBUSY;
+            }
 
-            REJ_SEMAPHORE_DOWN(&sigq->qlock);
-            mutex_acquire(&sigq->rwlock);
+            sigq->rwlock = 1;
             sigq->queue[sigq->next_index++] = (((uint64_t)current_task->pid << 32) | dword);
-            mutex_release(&sigq->rwlock);
+            psignal_exec_callback(sigq, current);
             return EXIT_SUCCESS;
         }
 
@@ -371,14 +461,31 @@ ERRNO_T psignal_send(PID_T to, uint32_t dword) {
 uint64_t psignal_read(void) {
     struct SignalQueue* sigq = &current_task->sigq;
     
-    if (sigq->next_index == 0) {
-        return 0;
+    /*
+     *  If current task is a signal handler
+     *  unlock the parent's rwlock, otherwise unlock 
+     *  the current task's rwlock.
+     */
+
+    if (current_task->flags & PFLAG_SIGNAL_HANDLER) {
+        current_task->parent->sigq.rwlock = 0;
+    } else {
+        sigq->rwlock = 0;
     }
 
-    mutex_acquire(&sigq->rwlock);
-    uint64_t signal = sigq->queue[--sigq->next_index];
-    mutex_release(&sigq->rwlock);
+    // No more signals to read.
+    if (sigq->next_index == 0) { 
+        return 0;
+    }
+    
+    
+    uint64_t signal;
+    if (!(current_task->flags & PFLAG_SIGNAL_HANDLER)) {
+        signal = sigq->queue[--sigq->next_index];
+    } else {
+        sigq = &current_task->parent->sigq;
+        signal = sigq->queue[--sigq->next_index];
+    }
 
-    semaphore_up(&sigq->qlock);
     return PSIGNAL_TOP_BITS_UNTOUCHED(signal) ? signal : 0;
 }

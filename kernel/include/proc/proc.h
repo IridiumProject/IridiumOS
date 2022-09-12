@@ -27,9 +27,9 @@ typedef uint64_t PSIGNAL_T;
  */
 
 struct SignalQueue {
-    MUTEX_T rwlock;
-    SEMAPHORE_T qlock;
-    PSIGNAL_T queue[PSIGNAL_QUEUE_SIZE];
+    uint8_t rwlock;
+    PSIGNAL_T queue[PSIGNAL_QUEUE_SIZE];        // Recv queue, holds signal until process reads it.
+    void* signal_callback;                      // Signal callback which gets called on a signal being sent.
     uint8_t next_index;
 };
 
@@ -38,10 +38,15 @@ struct SignalQueue {
 typedef enum {
     PSTATE_BLOCKED = 0,
     PSTATE_RUNNING = 1,
-    PSTATE_READY = 2
+    PSTATE_READY = 2,
+    PSTATE_ZOMBIE = 3                   // Recently killed process (will be removed from queue when found by task switcher).
 } PSTATE_T;
 
 
+// Process flags.
+#define PFLAG_SIGNAL_HANDLER (1 << 0)               // Process signal handler (i.e process spawned to handle signal callback).
+
+// Context.
 typedef enum {
     PCTX_RBP = 0,
     PCTX_RSP = 1,
@@ -62,8 +67,10 @@ struct Process {
     uint64_t context[PCONTEXT_SIZE];                            // Context (registers and address space).
     uint16_t n_slave_driver_groups;                             // The amount of driver groups this process owns.
     DRIVER_TYPE_T slave_driver_groups[DRVMASTER_MAX_SLAVES];    // Driver group this process owns (used by daemons, if not used: DRIVERTYPE_NONE).
-    uint8_t uses_console : 1;
+    uint8_t uses_console : 1;                                   // 1 if process should have error info output to console.
+    uint16_t flags;                                             // Process flags.
     struct SignalQueue sigq;                                    // Signal queue.
+    struct Process* parent;                                     // Signal queue.
     struct Process* prev;                                       // Pointer to process on the prev.
     struct Process* next;                                       // Pointer to process on the next.
 };
@@ -74,6 +81,7 @@ __attribute__((naked)) void proc_init(void);
 uint64_t* proc_get_context(struct Process* root);
 struct Process* proc_get_next(struct Process* root);
 void proc_set_state(struct Process* root, PSTATE_T state);
+uint64_t fetch_rip(void);
 
 // Permission related stuff.
 ERRNO_T perm_grant(PID_T pid, PPERM_T perms);
@@ -87,14 +95,14 @@ ERRNO_T perm_revoke(PID_T pid, PPERM_T perms);
 PID_T _initrd_spawn(const char* path, PPERM_T permissions, uint8_t uses_console);
 
 // Exits the current process.
-__attribute__((noreturn)) void exit(void);
+void exit(void);
 
 // For internal kernel usage if a task does something it's 
 // not supposed to and causes a fault.
 __attribute__((noreturn)) void handle_exception(uint8_t vector, uint64_t rip, uint64_t errcode);
 
 // Kills a process.
-__attribute__((naked)) void kill(PID_T pid, ERRNO_T* errno_out);
+__attribute__((noreturn)) void kill(PID_T pid, ERRNO_T* errno_out);
 
 // Signal stuff.
 ERRNO_T psignal_send(PID_T to, uint32_t dword);
