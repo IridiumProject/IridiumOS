@@ -39,7 +39,6 @@ typedef enum {
     PSTATE_BLOCKED = 0,
     PSTATE_RUNNING = 1,
     PSTATE_READY = 2,
-    PSTATE_ZOMBIE = 3                   // Recently killed process (will be removed from queue when found by task switcher).
 } PSTATE_T;
 
 
