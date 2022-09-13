@@ -82,7 +82,7 @@ void write_string(const char* string, uint32_t color) {
     static uint32_t x = 0;
     static uint32_t y = 0;
     const uint32_t X_INC = 8;
-    const uint32_t Y_INC = 10; 
+    const uint32_t Y_INC = 16; 
 
     for (int i = 0; i < strlen(string); ++i) {
         if (string[i] == '\n') {
