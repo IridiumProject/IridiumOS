@@ -22,6 +22,6 @@ struct Service {
  *
  */
 
-PID_T _service_create(const char* path, const char* name, const char* description, PPERM_T pmask);
+PID_T _service_create(const char* path, const char* name, const char* description, PPERM_T pmask, uint8_t uses_console);
 
 #endif
