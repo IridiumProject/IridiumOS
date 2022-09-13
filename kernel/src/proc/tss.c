@@ -19,7 +19,7 @@ void write_tss(void) {
     memzero(tss, sizeof(struct TSSEntry));
 
     uint64_t base = (uint64_t)tss;
-    uint64_t stack = (uint64_t)(kmalloc(KSTACK_SIZE) + KSTACK_SIZE - 20);
+    uint64_t stack = (uint64_t)vmm_alloc_page() + (0x1000 - 20);
 
     tss->rsp0Low = stack & 0xFFFFFFFF; 
     tss->rsp0High = stack >> 32;
