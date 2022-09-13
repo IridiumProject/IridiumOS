@@ -4,6 +4,9 @@ global dispatch_syscall
 extern syscall_regs
 extern syscall_table
 extern g_SYSCALL_COUNT
+extern syscall_begin
+extern syscall_end
+extern kmalloc
 
 ;; NOTE: Use anything other than RAX as a return value for syscalls.
 %macro set_reg_at 2
@@ -23,13 +26,15 @@ extern g_SYSCALL_COUNT
 dispatch_syscall:
     cli
 
+    mov [_stack_top], rsp
+
     movzx r11, word [g_SYSCALL_COUNT]
     cmp rax, r11
     jge .done
 
     cmp rax, 0
     jl .done
-    
+ 
     set_reg_at 0, rax
     set_reg_at 1, rbx
     set_reg_at 2, rcx
@@ -43,7 +48,7 @@ dispatch_syscall:
     mov r11, syscall_table
     imul rax, 8
     add r11, rax
-    call [r11]    
+    call [r11]  
 
     get_reg_at 1
     mov rbx, rax
@@ -70,6 +75,10 @@ dispatch_syscall:
     mov r10, rax
 
     get_reg_at 0
- 
+    
     .done:
+        mov rsp, [_stack_top]
         iretq
+
+section .data
+_stack_top: dq 0
