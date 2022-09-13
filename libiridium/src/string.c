@@ -8,9 +8,13 @@ size_t strlen(const char* str) {
 }
 
 
-uint8_t strncmp(const char* str1, const char* str2, size_t n) { 
-    for (size_t i = 0; i < n; ++i) {
-        if (str1[i] != str2[i]) {
+uint8_t bufcmp(const char* buf, const char* cmpstr, size_t cmp_len) {
+    if (cmp_len > strlen(cmpstr)) {
+        return 1;
+    }
+
+    for (size_t i = 0; i < cmp_len; ++i) {
+        if (*buf++ != *cmpstr++) {
             return 1;
         }
     }

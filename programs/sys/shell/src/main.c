@@ -25,11 +25,11 @@ static void psignal_callback(void) {
         uint8_t cmd_success = 0;
 
         // Check for basic built in commands.
-        if (strncmp(cmdbuf, "fetch", 2) == 0) {
+        if (bufcmp(cmdbuf, "fetch", cmdbuf_idx) == 0) {
             con_out_u32(fetch, PROMPT_COLOR);
             con_out_u32(" Iridium OS (early stages)\n\n", PROMPT_COLOR);
             cmd_success = 1;
-        } else if (strncmp(cmdbuf, "h", 1) == 0) {
+        } else if (bufcmp(cmdbuf, "h", cmdbuf_idx) == 0) {
             con_out_u32("Bogos binted?\n", PROMPT_COLOR);
             cmd_success = 1;
         }

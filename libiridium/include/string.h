@@ -6,7 +6,6 @@
 
 
 size_t strlen(const char* str);
-uint8_t strncmp(const char* str1, const char* str2, size_t n);             // Returns 0 if equal otherwise 1.
-
+uint8_t bufcmp(const char* buf, const char* cmpstr, size_t cmp_len);
 
 #endif
