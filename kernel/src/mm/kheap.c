@@ -31,7 +31,6 @@ struct KHeapBlock {
 
 static struct KHeapBlock* heap_head = NULL;
 static struct KHeapBlock* heap_tail = NULL;
-static KHEAP_STATUS_T status = 0;
 
 
 static struct KHeapBlock* first_fit(size_t sz) {
@@ -47,11 +46,11 @@ static struct KHeapBlock* first_fit(size_t sz) {
 
     while (block != NULL) { 
         if (block->is_free && block->size >= sz) {
-        return block;
+            return block;
         }
 
         if (block->next != NULL) {
-        block->next->prev = block;      // Set the block's previous.
+            block->next->prev = block;      // Set the block's previous.
         }
 
         block = block->next;
@@ -69,7 +68,6 @@ static struct KHeapBlock* first_fit(size_t sz) {
 void* kmalloc(size_t n_bytes) {
     // Ensure we have enough memory.
     if (bytes_allocated + n_bytes > HEAP_SIZE) {
-        status |= KHEAP_NO_MEMORY;
         return NULL;
     }
 
@@ -98,7 +96,6 @@ void* kmalloc(size_t n_bytes) {
         heap_head = region;                   // Reassign the head of the heap to be the new region.
     }
 
-    status = 0;       // Nothing went wrong, clear status.
     return DATA_START(region);
 }
 
@@ -108,11 +105,6 @@ void* krealloc(void* old, size_t n_bytes) {
     memcpy(new, old, n_bytes);
     kfree(old);
     return new;
-}
-
-
-KHEAP_STATUS_T kheap_status(void) {
-    return status;
 }
 
 
@@ -136,7 +128,6 @@ void kfree(void* block) {
     struct KHeapBlock* region = block - sizeof(struct KHeapBlock);
 
     if (region->mag != KHEAP_MAG) {
-        status |= KHEAP_INVALID_FREE;
         return;
     }
     
@@ -147,8 +138,6 @@ void kfree(void* block) {
         cur_block->is_free = 1;
         cur_block = cur_block->next;
     }
-
-    status = 0;       // Everything went well, status should be zero :) 
 }
 
 
