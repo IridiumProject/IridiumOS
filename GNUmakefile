@@ -30,6 +30,7 @@ debug: Iridium.iso
 debug1:
 	qemu-system-$(ARCH) -M q35 -m 2G -drive file=Iridium.iso -boot d -monitor stdio -d int -D logfile.txt -s -S
 
+.PHONY: setup
 setup:
 	git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-branch-binary --depth=1
 
