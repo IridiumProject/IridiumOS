@@ -6,14 +6,6 @@
 #include <sys/_psignaldef.h>
 #include <errno.h>
 
-#define PSIGNAL_CALLBACK_START                          \
-    static uint8_t lock = 0;                            \
-    while (lock);                                       \
-    lock = 1;
-
-#define PSIGNAL_CALLBACK_END                    \
-    lock = 0
-
 
 typedef int16_t PID_T;
 typedef uint32_t PPERM_T;
