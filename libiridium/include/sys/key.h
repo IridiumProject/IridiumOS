@@ -6,5 +6,10 @@
 #define KEYSTROKE_EXTRACT_CHARACTER(keystroke_payload) ((keystroke_payload >> 16) & 0xFF)
 #define KEYSTROKE_EXTRACT_PRESSED(keystroke_payload) (keystroke_payload & (1 << 24) >> 24)
 
+typedef enum {
+    KEY_ESC = 1,
+    KEY_ENTER = 28,
+} KEY_SCANCODE;
+
 
 #endif
