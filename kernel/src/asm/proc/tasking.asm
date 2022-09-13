@@ -7,6 +7,7 @@ extern current_task
 extern proc_get_next
 extern proc_get_context
 extern proc_set_state
+extern kprintf
 
 ;; Usage:
 ;; index_context contextptr index 
@@ -38,7 +39,8 @@ switch_task:
 
     ;; Save current state.
     set_context_index rax, 0, rbp
-    set_context_index rax, 1, rsp
+    mov r10, [rsp-(8*3)]
+    set_context_index rax, 1, r10           ;; RSP.
     set_context_index rax, 2, rbx
     set_context_index rax, 3, rdx
     set_context_index rax, 4, rcx
@@ -78,7 +80,7 @@ switch_task:
     mov rbp, rax
 
     index_context r10, 1
-    mov rsp, rax
+    mov [saved_rsp], rax
 
     index_context r10, 2
     mov rbx, rax
@@ -96,20 +98,22 @@ switch_task:
     
     mov r10, [tmpbuf1]
     mov [rsp], r10
+
+    ;; Set RSP in IRET stack frame
+    ;; to be our next task's RSP.
+    mov r10, [saved_rsp]
+    mov [rsp-(8*3)], r10 
     iretq
 
 
 ;; Returns to a ring 3 task.
-;; RDI: Task RSP from task context.
-;; ONLY CALL LIKE SO:
-;; taskjmp_userland(task->context[PCTX_RSP])
+;; RDI: Task RIP from task context.
+;; RSI: Task RSP.
 taskjmp_userland:
     cli
-    mov rax, rdi
-    mov rdi, [rdi]
-    mov [tmpbuf1], rdi
+    mov [tmpbuf1], rdi          ;; RIP.
     push 0x40 | 3               ;; SS.
-    push rax                    ;; RSP.
+    push rsi                    ;; RSP.
     pushf                       ;; RFLAGS.
     mov rax, [rsp]
     or rax, 1 << 9
@@ -126,3 +130,4 @@ fetch_rip:
 section .data
 tmpbuf: dq 0
 tmpbuf1: dq 0
+saved_rsp: dq 0
