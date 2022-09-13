@@ -17,14 +17,13 @@
 struct Process* queue_head = NULL;               // Top of queue.
 struct Process* queue_base = NULL;               // Base of queue.
 struct Process* current_task = NULL;             // Currently running task.
-struct Process* last_zombie = NULL;
 
 static uint64_t ret_rip;
 static PID_T next_pid = 1;
 
 
 // tasking.asm
-void taskjmp_userland(uint64_t task_rsp);
+void taskjmp_userland(uint64_t task_rip, uint64_t task_rsp);
 
 static void psignal_queue_init(struct SignalQueue* sigq) {
     sigq->rwlock = MUTEX_UNLOCKED;
@@ -57,13 +56,14 @@ static struct Process* locate_proc(PID_T pid) {
 
 static ERRNO_T _spawn(void* rip, const char* path, PPERM_T permissions, uint8_t uses_console) {
     CLI;
-
+    
     if (permissions != 0 && !(current_task->perm_mask & PPERM_PERM)) {
         return -EPERM;
     }
 
     struct Process* prev = queue_head;
     queue_head->next = kmalloc(sizeof(struct Process));
+    ASSERT(queue_head->next != NULL);
     queue_head = queue_head->next;
     queue_head->pid = next_pid++;
     queue_head->perm_mask = permissions;
@@ -76,6 +76,7 @@ static ERRNO_T _spawn(void* rip, const char* path, PPERM_T permissions, uint8_t 
     queue_head->parent = NULL;
     queue_head->uses_console = uses_console;
     psignal_queue_init(&queue_head->sigq);
+    ASSERT(locate_proc(queue_head->pid));
 
     // Setup vaddrsp.
     queue_head->context[PCTX_CR3] = (uint64_t)mkpml4();
@@ -92,21 +93,22 @@ static ERRNO_T _spawn(void* rip, const char* path, PPERM_T permissions, uint8_t 
         
     // Setup stack. 
     queue_head->context[PCTX_STACK_BASE] = (uint64_t)kmalloc_user(STACK_SIZE); 
-    queue_head->context[PCTX_RBP] = queue_head->context[PCTX_STACK_BASE] + (STACK_SIZE - 10);
+    ASSERT(queue_head->context[PCTX_STACK_BASE] != 0);
+    queue_head->context[PCTX_RBP] = queue_head->context[PCTX_STACK_BASE] + (STACK_SIZE / 2);
     queue_head->context[PCTX_RSP] = queue_head->context[PCTX_RBP];
     queue_head->context[PCTX_RIP] = (uint64_t)rip;
-
+    
     // Setup IRET stack frame for this task.
     uint64_t* stack = (uint64_t*)queue_head->context[PCTX_RSP];
-    stack[4] = 0x40 | 3;
-    stack[3] = queue_head->context[PCTX_RSP];
+    stack[0] = 0x40 | 3;
+    stack[1] = queue_head->context[PCTX_RSP];
     uint64_t rflags = 0;
     __asm__ __volatile__("pushf; pop %0" : "=r" (rflags));
     rflags |= 0x200;
 
     stack[2] = rflags;
-    stack[1] = 0x38 | 3;
-    stack[0] = (uint64_t)rip;
+    stack[3] = 0x38 | 3;
+    stack[4] = (uint64_t)rip;
     LOAD_CR3(old_cr3);
     return EXIT_SUCCESS;
 }
@@ -119,26 +121,18 @@ static void psignal_exec_callback(struct SignalQueue* sigq, struct Process* to) 
      */
 
     if (sigq->signal_callback != NULL) {
+        struct Process* prev = queue_head;
         // 1 because signal is being handled.
         _spawn(sigq->signal_callback, NULL, 0, 1);
         queue_head->perm_mask = to->perm_mask;
         queue_head->context[PCTX_CR3] = to->context[PCTX_CR3]; 
         queue_head->parent = to;
-        queue_head->sigq = to->sigq; 
+        queue_head->sigq = to->sigq;
+        queue_head->next = queue_base;
 
         // Ensure the prev process's next is queue_head.
-        struct Process* prev = locate_proc(queue_head->pid - 1);
-        ASSERT(prev != NULL);
-        prev->next = queue_head;
-        /*
-         *  This process was spawned to handle a signal.
-         *  Hence why we use this flag.
-         *
-         *  When killed, The parent's rwlock will be released.
-         *
-         */
-                
         queue_head->flags = PFLAG_SIGNAL_HANDLER;
+        ASSERT(locate_proc(queue_head->pid) != NULL);
     }
 }
 
@@ -202,7 +196,7 @@ __attribute__((naked)) void proc_init(void) {
 
 
 // Assembly helpers for proc.asm
-struct Process* proc_get_next(struct Process* root) {   
+struct Process* proc_get_next(struct Process* root) { 
     return root->next;
 }
 
@@ -281,27 +275,32 @@ __attribute__((noreturn)) void kill(PID_T pid, ERRNO_T* errno_out) {
      */
     if (pid == 1) {
         SAFE_PTR_DEREF(errno_out, -EPERM);
-        taskjmp_userland(current_task->context[PCTX_RSP]);
+        taskjmp_userland(current_task->context[PCTX_RIP], current_task->context[PCTX_RSP]);
     }
 
 
     if (pid < 0 || pid > queue_head->pid) {
         SAFE_PTR_DEREF(errno_out, -EXIT_FAILURE); 
-        taskjmp_userland(current_task->context[PCTX_RSP]);
+        taskjmp_userland(current_task->context[PCTX_RIP], current_task->context[PCTX_RSP]);
     }
 
     struct Process* current = locate_proc(pid);
     if (current == NULL) {
         SAFE_PTR_DEREF(errno_out, -EXIT_FAILURE);
-        taskjmp_userland(current_task->context[PCTX_RSP]);
+        taskjmp_userland(current_task->context[PCTX_RIP], current_task->context[PCTX_RSP]);
     }
 
+    /*
+     *  The is_queue_head variable
+     *  is 1 if the process killed is 
+     *  the queue head, otherwise 0.
+     *
+     */
     PID_T running_pid = current_task->pid;      // PID of currently running process. 
-
-    if (queue_head->pid == pid) {
+    if (running_pid == queue_head->pid) {
         --next_pid;
     }
-                
+
     /*
      *  Once we find the process we must do
      *  the following:
@@ -320,9 +319,16 @@ __attribute__((noreturn)) void kill(PID_T pid, ERRNO_T* errno_out) {
     pmm_free(current->context[PCTX_CR3]);
 
     // Remove from queue.
-    struct Process* prev = locate_proc(pid - 1);
-    struct Process* next = locate_proc(pid + 1);
-    prev->next = next != NULL ? next : queue_base;
+    current->prev->next = current->next;
+    current->next->prev = current->prev;
+    
+    /*
+     *  If we are killing the head process
+     *  make the head queue_head->prev.
+     */
+    if (pid == queue_head->pid) {
+        queue_head = queue_head->prev;
+    }
 
     // Free actual process structure.
     kfree(current);
@@ -332,16 +338,7 @@ __attribute__((noreturn)) void kill(PID_T pid, ERRNO_T* errno_out) {
 
     // Ensure the it is indeed destroyed (for debugging).
     ASSERT(locate_proc(pid) == NULL);
-    /*
-    if (running_pid == pid) {
-        current_task = queue_base;
-        taskjmp_userland(current_task->context[PCTX_RSP]);
-    } else {
-        taskjmp_userland(current_task->context[PCTX_RSP]);
-    }
-    */
-
-    current_task = queue_base;
+    current_task = current;
     STI;
     while (1);
 }
@@ -431,7 +428,7 @@ ERRNO_T psignal_send(PID_T to, uint32_t dword) {
     struct Process* current = queue_base;
 
     while (1) {
-        if (current->pid == to) { 
+        if (current->pid == to) {
             // Found process with matching PID.
             struct SignalQueue* sigq = &current->sigq;
             if (sigq->next_index >= PSIGNAL_QUEUE_SIZE) {
@@ -442,8 +439,9 @@ ERRNO_T psignal_send(PID_T to, uint32_t dword) {
                 return -EBUSY;
             }
 
+            PID_T sender_pid = current_task->flags & PFLAG_SIGNAL_HANDLER ? current_task->parent->pid : current_task->pid;
             sigq->rwlock = 1;
-            sigq->queue[sigq->next_index++] = (((uint64_t)current_task->pid << 32) | dword);
+            sigq->queue[sigq->next_index++] = (((uint64_t)sender_pid << 32) | dword);
             psignal_exec_callback(sigq, current);
             return EXIT_SUCCESS;
         }
@@ -451,6 +449,7 @@ ERRNO_T psignal_send(PID_T to, uint32_t dword) {
         current = current->next;
 
         if (current == queue_base) {
+            kprintf("FAILED SIGNAL SENT TO: %d\n", to);
             // We are back at the beginning, could not find process.
             return -EXIT_FAILURE;
         } 
