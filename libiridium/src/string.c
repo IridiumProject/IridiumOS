@@ -2,14 +2,14 @@
 
 
 size_t strlen(const char* str) {
-    size_t i;
+    size_t i = 0;
     while (str[i++]);
-    return i - 1;
+    return i-1;
 }
 
 
 uint8_t bufcmp(const char* buf, const char* cmpstr, size_t cmp_len) {
-    if (cmp_len > strlen(cmpstr)) {
+    if (strlen(cmpstr) != cmp_len) {
         return 1;
     }
 
