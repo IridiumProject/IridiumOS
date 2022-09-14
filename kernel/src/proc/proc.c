@@ -328,6 +328,12 @@ __attribute__((noreturn)) void kill(PID_T pid, ERRNO_T* errno_out) {
      */
     if (pid == queue_head->pid) {
         queue_head = queue_head->prev;
+
+        // Ensure the next pid is in order.
+        while (next_pid > queue_head->pid) {
+            --next_pid;
+            break;
+        }
     }
 
     // Free actual process structure.
