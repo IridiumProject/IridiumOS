@@ -8,10 +8,11 @@
 #include <proc/drvmaster.h>
 #include <proc/proc.h>
 #include <fs/initrd.h>
+#include <arch/io.h>
 #include <stdint.h>
 
 // Change SYSCALL_COUNT not g_SYSCALL_COUNT.
-#define SYSCALL_COUNT 9
+#define SYSCALL_COUNT 10
 const uint16_t g_SYSCALL_COUNT = SYSCALL_COUNT;
 
 struct SyscallRegs {
@@ -157,6 +158,33 @@ static void sys_psignal_hook(void) {
 }
 
 
+/*
+ *  Pulses CPUs RESET pin.
+ */
+
+__attribute__((noreturn)) static void sys_reboot(void) {
+    /*
+     *  Clear keyboard buffers.
+     *
+     */
+
+    const uint8_t KB_INTERFACE = 0x64;          // Keyboard interface IO port.
+    const uint8_t KB_IO = 0x60;                 // Keyboard IO port.
+
+    uint8_t tmp = inportb(KB_INTERFACE);
+    do {
+        tmp = inportb(KB_INTERFACE);
+        if (tmp & (1 << 0)) {               // Keyboard data in buffer bit (check if not empty).
+            inportb(KB_IO);                 // Empty buffer.
+        }
+    } while (tmp & (1 << 1));               // While command buffer is not empty.
+
+    outportb(0x64, 0xFE);
+    __asm__ __volatile__("cli; hlt");
+    while (1);
+}
+
+
 void(*syscall_table[SYSCALL_COUNT])(void) = {
     sys_hello,                          // 0x0.
     sys_req,                            // 0x1.
@@ -167,4 +195,5 @@ void(*syscall_table[SYSCALL_COUNT])(void) = {
     sys_con_out,                        // 0x6.
     sys_exit,                           // 0x7.
     sys_psignal_hook,                   // 0x8.
+    sys_reboot,                         // 0x9.
 };

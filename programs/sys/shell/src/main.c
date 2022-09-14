@@ -2,6 +2,7 @@
 #include <sys/process.h>
 #include <sys/key.h>
 #include <sys/sysreq.h>
+#include <sys/power.h>
 #include <unistd.h>
 #include <string.h>
 
@@ -31,6 +32,9 @@ static void psignal_callback(void) {
             cmd_success = 1;
         } else if (bufcmp(cmdbuf, "h", cmdbuf_idx) == 0) {
             con_out_u32("Bogos binted?\n", PROMPT_COLOR);
+            cmd_success = 1;
+        } else if (bufcmp(cmdbuf, "reboot", cmdbuf_idx) == 0) {
+            reboot(REBOOT_MAG);
             cmd_success = 1;
         }
 
